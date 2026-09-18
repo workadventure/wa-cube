@@ -14,7 +14,7 @@
 <script src="https://play.workadventu.re/iframe_api.js"></script>
 
 <!-- Styles -->
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=2026-09-18b">
 </head>
 
 <body>
@@ -23,10 +23,10 @@
 
   <!-- Filtres : un bouton par zone -->
   <nav class="filters fade-in delay-1" aria-label="Filtrer par zone">
-    <button class="filter" data-zone="staff"    style="--c: var(--c-staff)"><span class="dot"></span>Staff</button>
     <button class="filter" data-zone="campus"   style="--c: var(--c-campus)"><span class="dot"></span>Campus</button>
     <button class="filter" data-zone="showroom" style="--c: var(--c-showroom)"><span class="dot"></span>Showroom</button>
     <button class="filter" data-zone="event"    style="--c: var(--c-event)"><span class="dot"></span>Événement</button>
+    <button class="filter" data-zone="staff"    style="--c: var(--c-staff)"><span class="dot"></span>Staff</button>
     <button class="filter" data-zone="entry"    style="--c: var(--c-entry)"><span class="dot"></span>Entrée</button>
   </nav>
 
@@ -44,7 +44,7 @@
 
     <div class="map" id="map">
       <!-- Image de fond (pour remplacer : changez le src ci-dessous) -->
-      <img class="map-bg" src="./campus.png" alt="Vue aérienne du campus" />
+      <img class="map-bg" src="./campus.png?v=2026-09-18b" alt="Vue aérienne du campus" />
 
       <!-- Zones cliquables. left/top/width/height en %, --c = couleur de zone -->
       <div class="hotspots">
@@ -122,6 +122,6 @@
 </aside>
 
 <!-- Logique -->
-<script src="app.js"></script>
+<script src="app.js?v=2026-09-18b"></script>
 </body>
 </html>
