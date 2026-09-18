@@ -1,0 +1,394 @@
+From a51cd3137dd564da55c40a310ec238f8075cdf77 Mon Sep 17 00:00:00 2001
+From: Augustin <maillet.augustin@gmail.com>
+Date: Fri, 18 Sep 2026 12:29:12 +0200
+Subject: [PATCH 1/3] =?UTF-8?q?Plan:=20t=C3=A9l=C3=A9portation=20directe?=
+ =?UTF-8?q?=20vers=20les=20salles=201=20=C3=A0=207=20depuis=20la=20zone=20?=
+ =?UTF-8?q?Campus?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Pp81r7zVegDwTmR6uiXkyc
+---
+ public/app.js      | 82 ++++++++++++++++++++++++++++++++++++++++++++++
+ public/campus.html |  6 ++++
+ public/styles.css  | 81 +++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 169 insertions(+)
+
+diff --git a/public/app.js b/public/app.js
+index eacda8e..abfb577 100644
+--- a/public/app.js
++++ b/public/app.js
+@@ -15,6 +15,30 @@ const TELEPORT_COORDS = {
+   entry:    [1897, 1373],
+ };
+ 
++/* =========================================================
++   ⚙️  SALLES DE CLASSE — À ÉDITER ICI
++   tp   = point d'arrivée [x, y] en pixels sur la map (1 tuile = 32 px)
++   rect = rectangle de la salle [x, y, largeur, hauteur] en pixels,
++          sert uniquement à placer la salle sur l'image du plan.
++   Pour ajouter une salle : copiez une ligne et changez les valeurs.
++   ========================================================= */
++const MAP_SIZE = [7040, 4448]; // taille de campus.tmj en pixels (220 x 139 tuiles)
++
++const CLASSROOMS = [
++  { id: 1, name: 'Salle 1', tp: [1600, 960], rect: [1440, 352, 640, 864] },
++  { id: 2, name: 'Salle 2', tp: [2272, 960], rect: [2112, 352, 640, 864] },
++  { id: 3, name: 'Salle 3', tp: [2944, 960], rect: [2784, 352, 640, 864] },
++  { id: 4, name: 'Salle 4', tp: [3616, 960], rect: [3456, 352, 640, 864] },
++  { id: 5, name: 'Salle 5', tp: [4288, 960], rect: [4128, 352, 640, 864] },
++  { id: 6, name: 'Salle 6', tp: [4960, 960], rect: [4800, 352, 640, 864] },
++  { id: 7, name: 'Salle 7', tp: [5232, 1456], rect: [5136, 1376, 336, 448] },
++];
++
++// Tags WorkAdventure autorisés à se téléporter dans les salles
++// (même règle que main.ts : seuls les "premium" passent la barrière du campus).
++// Mettez [] pour ouvrir les salles à tout le monde.
++const ROOMS_REQUIRED_TAGS = ['premium'];
++
+ /* =========================================================
+    Données des zones
+    id = clé partagée par le hotspot, le filtre et la carte.
+@@ -138,6 +162,8 @@ function highlight(zoneId){
+   $$('.zone-card').forEach(c      => c.classList.toggle('is-on',  c.dataset.zone === targetId));
+   $$('.filter[data-zone]').forEach(f => f.classList.toggle('active', f.dataset.zone === targetId));
+   mapEl.classList.toggle('is-focused', !!targetId);
++  // Les salles n'apparaissent sur l'image que quand Campus est sélectionné
++  mapEl.classList.toggle('show-rooms', stickyZone === 'campus');
+ }
+ 
+ function selectZone(zoneId){
+@@ -186,6 +212,7 @@ function openDetail(zone){
+   $('#dTitle').textContent = zone.name;
+   $('#dDesc').textContent  = zone.desc;
+   $('#dTp').onclick = () => teleport(zone);
++  $('#dRooms').hidden = zone.id !== 'campus';
+   detailEl.classList.add('open');
+ }
+ function closeDetail(){ detailEl.classList.remove('open'); }
+@@ -208,6 +235,61 @@ function teleport(zone){
+   });
+ }
+ 
++/* =========================================================
++   Salles de classe : boutons du sous-menu Campus + zones sur l'image
++   ========================================================= */
++let roomsAllowed = true; // recalculé avec les tags du joueur
++
++function teleportToRoom(room){
++  if (!roomsAllowed) return;
++  const [x, y] = room.tp;
++  withWA(() => {
++    try { WA.player.teleport(x, y); } catch (e) { console.warn(e); }
++    try { WA.ui.modal.closeModal(); } catch (e) { console.warn(e); }
++  });
++}
++
++const pct = (v, total) => `${(v / total * 100).toFixed(2)}%`;
++
++CLASSROOMS.forEach(room => {
++  // Bouton dans le panneau Campus
++  const btn = document.createElement('button');
++  btn.className = 'room-btn';
++  btn.dataset.room = room.id;
++  btn.innerHTML = `<span class="num">${room.id}</span>${room.name}`;
++  btn.addEventListener('click', () => teleportToRoom(room));
++  $('#dRoomsGrid').appendChild(btn);
++
++  // Zone cliquable sur l'image (visible quand Campus est sélectionné)
++  const [x, y, w, h] = room.rect;
++  const spot = document.createElement('button');
++  spot.className = 'room-spot';
++  spot.dataset.room = room.id;
++  spot.setAttribute('aria-label', `Aller en ${room.name}`);
++  spot.title = `Aller en ${room.name}`;
++  spot.style.left   = pct(x, MAP_SIZE[0]);
++  spot.style.top    = pct(y, MAP_SIZE[1]);
++  spot.style.width  = pct(w, MAP_SIZE[0]);
++  spot.style.height = pct(h, MAP_SIZE[1]);
++  spot.textContent = room.id;
++  spot.addEventListener('click', e => { e.stopPropagation(); teleportToRoom(room); });
++  $('.hotspots').appendChild(spot);
++});
++
++function applyRoomsAccess(tags){
++  roomsAllowed = ROOMS_REQUIRED_TAGS.length === 0
++    || ROOMS_REQUIRED_TAGS.some(t => (tags || []).includes(t));
++  $$('.room-btn, .room-spot').forEach(b => { b.disabled = !roomsAllowed; });
++  $('#dRoomsLock').hidden = roomsAllowed;
++}
++
++// Dans WorkAdventure on lit les tags du joueur. Hors WA (test local), tout est ouvert.
++if (window.WA && WA.onInit){
++  WA.onInit()
++    .then(() => applyRoomsAccess(WA.player.tags))
++    .catch(() => applyRoomsAccess([]));
++}
++
+ $('#closeBtn').addEventListener('click', () => {
+   withWA(() => {
+     try { WA.ui.modal.closeModal(); } catch (e) { console.warn(e); }
+diff --git a/public/campus.html b/public/campus.html
+index e8cd63b..5a52a1b 100644
+--- a/public/campus.html
++++ b/public/campus.html
+@@ -106,6 +106,12 @@
+     </div>
+   </div>
+   <p id="dDesc">Description</p>
++  <!-- Sous-menu des salles (affiché uniquement pour la zone Campus, rempli par app.js) -->
++  <div class="rooms" id="dRooms" hidden>
++    <div class="rooms-title">Aller directement dans une salle</div>
++    <div class="rooms-grid" id="dRoomsGrid"></div>
++    <div class="rooms-lock" id="dRoomsLock" hidden>Salles réservées aux comptes Cube connectés.</div>
++  </div>
+   <div class="row">
+     <button class="btn btn-tp" id="dTp">
+       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+diff --git a/public/styles.css b/public/styles.css
+index a2617cb..f477e04 100644
+--- a/public/styles.css
++++ b/public/styles.css
+@@ -531,6 +531,87 @@ button{ font: inherit; color: inherit; }
+ }
+ .detail .close:hover{ background: var(--surface-2); color: var(--ink); }
+ 
++/* Sous-menu des salles (zone Campus) */
++.detail .rooms{ margin: 0 0 14px; }
++.detail .rooms[hidden]{ display: none; }
++.detail .rooms-title{
++  font-family: 'JetBrains Mono', monospace;
++  font-size: 10px;
++  letter-spacing: .12em;
++  text-transform: uppercase;
++  color: var(--ink-mute);
++  margin-bottom: 8px;
++}
++.detail .rooms-grid{
++  display: grid;
++  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
++  gap: 6px;
++}
++.room-btn{
++  display: inline-flex;
++  align-items: center;
++  gap: 8px;
++  padding: 8px 10px;
++  border-radius: var(--r-sm);
++  border: 1px solid var(--border);
++  background: var(--surface-2);
++  color: var(--ink);
++  font: inherit;
++  font-size: 13px;
++  font-weight: 700;
++  cursor: pointer;
++  transition: background .2s ease, border-color .2s ease, transform .15s ease;
++}
++.room-btn .num{
++  width: 22px; height: 22px;
++  border-radius: 6px;
++  display: grid;
++  place-items: center;
++  font-size: 12px;
++  color: white;
++  background: color-mix(in oklab, var(--c-campus) 92%, black);
++}
++.room-btn:hover:not(:disabled){
++  background: color-mix(in oklab, var(--c-campus) 10%, white);
++  border-color: color-mix(in oklab, var(--c-campus) 45%, var(--border));
++  transform: translateY(-1px);
++}
++.room-btn:focus-visible{ outline: 2px solid var(--c-campus); outline-offset: 2px; }
++.room-btn:disabled{ opacity: .45; cursor: not-allowed; }
++.detail .rooms-lock{
++  margin-top: 8px;
++  font-size: 12px;
++  color: var(--ink-mute);
++}
++.detail .rooms-lock[hidden]{ display: none; }
++
++/* Salles sur l'image : cachées, visibles quand Campus est sélectionné */
++.room-spot{
++  position: absolute;
++  display: grid;
++  place-items: center;
++  padding: 0;
++  border-radius: 6px;
++  border: 1.5px solid color-mix(in oklab, var(--c-campus) 85%, white);
++  background: color-mix(in oklab, var(--c-campus) 30%, transparent);
++  color: white;
++  font: inherit;
++  font-size: 12px;
++  font-weight: 800;
++  text-shadow: 0 1px 2px rgba(0,0,0,.45);
++  cursor: pointer;
++  opacity: 0;
++  pointer-events: none;
++  transition: opacity .2s ease, background .2s ease, transform .15s ease;
++}
++.map.show-rooms .room-spot{ opacity: 1; pointer-events: auto; }
++.map.show-rooms .room-spot:hover:not(:disabled){
++  background: color-mix(in oklab, var(--c-campus) 60%, transparent);
++  transform: scale(1.04);
++}
++.room-spot:focus-visible{ outline: 2px solid white; outline-offset: 2px; }
++.room-spot:disabled{ cursor: not-allowed; filter: grayscale(.8); }
++
+ /* =========================================================
+    9. Responsive
+    ========================================================= */
+-- 
+2.43.0
+
+
+From 6b72fb96b1f37e1b90d621a154f7abadda3a0e8a Mon Sep 17 00:00:00 2001
+From: Augustin <maillet.augustin@gmail.com>
+Date: Fri, 18 Sep 2026 12:31:08 +0200
+Subject: [PATCH 2/3] =?UTF-8?q?Plan:=20ajout=20de=20l'Agora=20en=20t=C3=AA?=
+ =?UTF-8?q?te=20du=20sous-menu=20Campus,=20couleur=20d=C3=A9di=C3=A9e?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Pp81r7zVegDwTmR6uiXkyc
+---
+ public/app.js     | 15 +++++++++------
+ public/styles.css | 24 ++++++++++++++++++++++++
+ 2 files changed, 33 insertions(+), 6 deletions(-)
+
+diff --git a/public/app.js b/public/app.js
+index abfb577..5ea5f7b 100644
+--- a/public/app.js
++++ b/public/app.js
+@@ -21,10 +21,12 @@ const TELEPORT_COORDS = {
+    rect = rectangle de la salle [x, y, largeur, hauteur] en pixels,
+           sert uniquement à placer la salle sur l'image du plan.
+    Pour ajouter une salle : copiez une ligne et changez les valeurs.
++   featured: true = espace à part (bouton pleine largeur, autre couleur).
+    ========================================================= */
+ const MAP_SIZE = [7040, 4448]; // taille de campus.tmj en pixels (220 x 139 tuiles)
+ 
+ const CLASSROOMS = [
++  { id: 'agora', short: 'A', name: 'Agora', featured: true, tp: [2944, 1504], rect: [1440, 1248, 3616, 1504] },
+   { id: 1, name: 'Salle 1', tp: [1600, 960], rect: [1440, 352, 640, 864] },
+   { id: 2, name: 'Salle 2', tp: [2272, 960], rect: [2112, 352, 640, 864] },
+   { id: 3, name: 'Salle 3', tp: [2944, 960], rect: [2784, 352, 640, 864] },
+@@ -254,24 +256,25 @@ const pct = (v, total) => `${(v / total * 100).toFixed(2)}%`;
+ CLASSROOMS.forEach(room => {
+   // Bouton dans le panneau Campus
+   const btn = document.createElement('button');
+-  btn.className = 'room-btn';
++  btn.className = 'room-btn' + (room.featured ? ' is-featured' : '');
+   btn.dataset.room = room.id;
+-  btn.innerHTML = `<span class="num">${room.id}</span>${room.name}`;
++  btn.innerHTML = `<span class="num">${room.short ?? room.id}</span>${room.name}`;
+   btn.addEventListener('click', () => teleportToRoom(room));
+   $('#dRoomsGrid').appendChild(btn);
+ 
+   // Zone cliquable sur l'image (visible quand Campus est sélectionné)
+   const [x, y, w, h] = room.rect;
+   const spot = document.createElement('button');
+-  spot.className = 'room-spot';
++  spot.className = 'room-spot' + (room.featured ? ' is-featured' : '');
+   spot.dataset.room = room.id;
+-  spot.setAttribute('aria-label', `Aller en ${room.name}`);
+-  spot.title = `Aller en ${room.name}`;
++  const dest = room.featured ? `à l'${room.name}` : `en ${room.name}`;
++  spot.setAttribute('aria-label', `Aller ${dest}`);
++  spot.title = `Aller ${dest}`;
+   spot.style.left   = pct(x, MAP_SIZE[0]);
+   spot.style.top    = pct(y, MAP_SIZE[1]);
+   spot.style.width  = pct(w, MAP_SIZE[0]);
+   spot.style.height = pct(h, MAP_SIZE[1]);
+-  spot.textContent = room.id;
++  spot.textContent = room.featured ? room.name : room.id;
+   spot.addEventListener('click', e => { e.stopPropagation(); teleportToRoom(room); });
+   $('.hotspots').appendChild(spot);
+ });
+diff --git a/public/styles.css b/public/styles.css
+index f477e04..ef73c4f 100644
+--- a/public/styles.css
++++ b/public/styles.css
+@@ -19,6 +19,7 @@
+   --c-showroom:     oklch(0.72 0.16 70);    /* jaune-orangé */
+   --c-event:        oklch(0.68 0.20 340);   /* rose */
+   --c-entry:        oklch(0.70 0.16 220);   /* bleu */
++  --c-agora:        oklch(0.45 0.15 10);    /* bordeaux, variante du rouge Campus */
+ 
+   /* Neutres chauds */
+   --bg:             oklch(0.985 0.005 90);
+@@ -585,6 +586,19 @@ button{ font: inherit; color: inherit; }
+ }
+ .detail .rooms-lock[hidden]{ display: none; }
+ 
++/* Agora : espace à part, pleine largeur et couleur dédiée */
++.room-btn.is-featured{
++  grid-column: 1 / -1;
++  background: color-mix(in oklab, var(--c-agora) 8%, white);
++  border-color: color-mix(in oklab, var(--c-agora) 35%, var(--border));
++}
++.room-btn.is-featured .num{ background: var(--c-agora); }
++.room-btn.is-featured:hover:not(:disabled){
++  background: color-mix(in oklab, var(--c-agora) 16%, white);
++  border-color: color-mix(in oklab, var(--c-agora) 60%, var(--border));
++}
++.room-btn.is-featured:focus-visible{ outline-color: var(--c-agora); }
++
+ /* Salles sur l'image : cachées, visibles quand Campus est sélectionné */
+ .room-spot{
+   position: absolute;
+@@ -609,6 +623,16 @@ button{ font: inherit; color: inherit; }
+   background: color-mix(in oklab, var(--c-campus) 60%, transparent);
+   transform: scale(1.04);
+ }
++.room-spot.is-featured{
++  border-style: dashed;
++  border-color: color-mix(in oklab, var(--c-agora) 80%, white);
++  background: color-mix(in oklab, var(--c-agora) 28%, transparent);
++  font-size: 13px;
++}
++.map.show-rooms .room-spot.is-featured:hover:not(:disabled){
++  background: color-mix(in oklab, var(--c-agora) 55%, transparent);
++  transform: none;
++}
+ .room-spot:focus-visible{ outline: 2px solid white; outline-offset: 2px; }
+ .room-spot:disabled{ cursor: not-allowed; filter: grayscale(.8); }
+ 
+-- 
+2.43.0
+
+
+From a804cfabd338351e184886063874ce042a6be23e Mon Sep 17 00:00:00 2001
+From: Augustin <maillet.augustin@gmail.com>
+Date: Fri, 18 Sep 2026 12:36:11 +0200
+Subject: [PATCH 3/3] =?UTF-8?q?Plan:=20Agora=20recal=C3=A9e=20sur=20la=20s?=
+ =?UTF-8?q?c=C3=A8ne=20+=20gradins=20au=20centre=20du=20hall?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Pp81r7zVegDwTmR6uiXkyc
+---
+ public/app.js | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/public/app.js b/public/app.js
+index 5ea5f7b..4662d06 100644
+--- a/public/app.js
++++ b/public/app.js
+@@ -26,7 +26,7 @@ const TELEPORT_COORDS = {
+ const MAP_SIZE = [7040, 4448]; // taille de campus.tmj en pixels (220 x 139 tuiles)
+ 
+ const CLASSROOMS = [
+-  { id: 'agora', short: 'A', name: 'Agora', featured: true, tp: [2944, 1504], rect: [1440, 1248, 3616, 1504] },
++  { id: 'agora', short: 'A', name: 'Agora', featured: true, tp: [2944, 2144], rect: [2656, 1664, 608, 704] },
+   { id: 1, name: 'Salle 1', tp: [1600, 960], rect: [1440, 352, 640, 864] },
+   { id: 2, name: 'Salle 2', tp: [2272, 960], rect: [2112, 352, 640, 864] },
+   { id: 3, name: 'Salle 3', tp: [2944, 960], rect: [2784, 352, 640, 864] },
+-- 
+2.43.0
+

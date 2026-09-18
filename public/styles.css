@@ -19,6 +19,7 @@
   --c-showroom:     oklch(0.72 0.16 70);    /* jaune-orangé */
   --c-event:        oklch(0.68 0.20 340);   /* rose */
   --c-entry:        oklch(0.70 0.16 220);   /* bleu */
+  --c-agora:        oklch(0.45 0.15 10);    /* bordeaux, variante du rouge Campus */
 
   /* Neutres chauds */
   --bg:             oklch(0.985 0.005 90);
@@ -530,6 +531,110 @@ button{ font: inherit; color: inherit; }
   cursor: pointer;
 }
 .detail .close:hover{ background: var(--surface-2); color: var(--ink); }
+
+/* Sous-menu des salles (zone Campus) */
+.detail .rooms{ margin: 0 0 14px; }
+.detail .rooms[hidden]{ display: none; }
+.detail .rooms-title{
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin-bottom: 8px;
+}
+.detail .rooms-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 6px;
+}
+.room-btn{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .2s ease, border-color .2s ease, transform .15s ease;
+}
+.room-btn .num{
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  color: white;
+  background: color-mix(in oklab, var(--c-campus) 92%, black);
+}
+.room-btn:hover:not(:disabled){
+  background: color-mix(in oklab, var(--c-campus) 10%, white);
+  border-color: color-mix(in oklab, var(--c-campus) 45%, var(--border));
+  transform: translateY(-1px);
+}
+.room-btn:focus-visible{ outline: 2px solid var(--c-campus); outline-offset: 2px; }
+.room-btn:disabled{ opacity: .45; cursor: not-allowed; }
+.detail .rooms-lock{
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--ink-mute);
+}
+.detail .rooms-lock[hidden]{ display: none; }
+
+/* Agora : espace à part, pleine largeur et couleur dédiée */
+.room-btn.is-featured{
+  grid-column: 1 / -1;
+  background: color-mix(in oklab, var(--c-agora) 8%, white);
+  border-color: color-mix(in oklab, var(--c-agora) 35%, var(--border));
+}
+.room-btn.is-featured .num{ background: var(--c-agora); }
+.room-btn.is-featured:hover:not(:disabled){
+  background: color-mix(in oklab, var(--c-agora) 16%, white);
+  border-color: color-mix(in oklab, var(--c-agora) 60%, var(--border));
+}
+.room-btn.is-featured:focus-visible{ outline-color: var(--c-agora); }
+
+/* Salles sur l'image : cachées, visibles quand Campus est sélectionné */
+.room-spot{
+  position: absolute;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 6px;
+  border: 1.5px solid color-mix(in oklab, var(--c-campus) 85%, white);
+  background: color-mix(in oklab, var(--c-campus) 30%, transparent);
+  color: white;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0,0,0,.45);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease, background .2s ease, transform .15s ease;
+}
+.map.show-rooms .room-spot{ opacity: 1; pointer-events: auto; }
+.map.show-rooms .room-spot:hover:not(:disabled){
+  background: color-mix(in oklab, var(--c-campus) 60%, transparent);
+  transform: scale(1.04);
+}
+.room-spot.is-featured{
+  border-style: dashed;
+  border-color: color-mix(in oklab, var(--c-agora) 80%, white);
+  background: color-mix(in oklab, var(--c-agora) 28%, transparent);
+  font-size: 13px;
+}
+.map.show-rooms .room-spot.is-featured:hover:not(:disabled){
+  background: color-mix(in oklab, var(--c-agora) 55%, transparent);
+  transform: none;
+}
+.room-spot:focus-visible{ outline: 2px solid white; outline-offset: 2px; }
+.room-spot:disabled{ cursor: not-allowed; filter: grayscale(.8); }
 
 /* =========================================================
    9. Responsive
