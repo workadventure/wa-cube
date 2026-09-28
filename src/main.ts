@@ -91,10 +91,10 @@ WA.onInit().then(() => {
         callback: () => {
             WA.ui.modal.openModal({
                 title: "Navigation",
-                src: "https://ecole-34139.map-storage.workadventu.re/cube/campus.html",
+                src: "https://campus-entry-cube.lovable.app/plan-aide",
                 allow: null,
                 allowApi: true,
-                position: "right",
+                position: "center",
                 closable: true,
                 allowFullScreen: false
             });
