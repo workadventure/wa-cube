@@ -55,6 +55,10 @@ const LEVEL_TAGS: Record<AccessLevel, readonly string[] | null> = {
 
 /** Zones à accès plus ouvert que "premium", de la plus précise à la plus large. */
 const OPEN_ZONES: { x: number; y: number; w: number; h: number; level: AccessLevel }[] = [
+  // Salle d'événement et parvis gauche (jusqu'au panneau "Téléportation Showroom") : seul
+  // endroit de ce côté du campus où un visiteur peut se trouver. Les murs existants de la
+  // carte ferment cette zone ; le visiteur n'y entre que téléporté.
+  { x: 4608, y: 2784, w: 768, h: 1032, level: "public" },
   // Showroom et Événement descendent jusqu'à y = 4040 : leurs points de téléportation
   // (300, 4000) et (5130, 3900) sont juste sous leur panneau sur la carte.
   { x: 119, y: 3497, w: 1470, h: 543, level: "public" }, // Showroom
