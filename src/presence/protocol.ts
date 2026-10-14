@@ -35,6 +35,8 @@ export const PRESENCE_EVENTS = {
   message: "admin:message",
   /** Accusé de réception : la personne a pris en compte le message ou la demande. */
   ack: "admin:ack",
+  /** La modération (staff ou admin) coupe le micro de quelqu'un. */
+  mute: "mod:mute",
 } as const;
 
 /**
@@ -75,9 +77,14 @@ export interface AdminCommand {
   v: number;
   /** Identifiant unique : une commande n'est exécutée qu'une fois. */
   id: string;
-  action: "kick";
+  /** kick : déconnecter. teleport : amener la personne à (x, y). */
+  action: "kick" | "teleport";
   reason: KickReason;
   targets: KickTarget[];
+  /** Point d'arrivée d'une téléportation (action "teleport"), en pixels de la map. */
+  x?: number;
+  y?: number;
+  zone?: string | null;
   /** Motif libre affiché à la personne sur la page de déconnexion (140 caractères max). */
   note?: string;
   by: string;
@@ -99,7 +106,10 @@ export function parseAdminCommand(value: unknown): AdminCommand | null {
   }
   if (!data || typeof data !== "object") return null;
   const c = data as Record<string, unknown>;
-  if (c.action !== "kick" || typeof c.id !== "string" || typeof c.at !== "number") return null;
+  if ((c.action !== "kick" && c.action !== "teleport") || typeof c.id !== "string" || typeof c.at !== "number") {
+    return null;
+  }
+  if (c.action === "teleport" && (typeof c.x !== "number" || typeof c.y !== "number")) return null;
   if (!Array.isArray(c.targets)) return null;
   const targets: KickTarget[] = [];
   for (const t of c.targets) {
@@ -115,9 +125,12 @@ export function parseAdminCommand(value: unknown): AdminCommand | null {
   return {
     v: typeof c.v === "number" ? c.v : 1,
     id: c.id,
-    action: "kick",
+    action: c.action,
     reason,
     targets,
+    x: typeof c.x === "number" ? c.x : undefined,
+    y: typeof c.y === "number" ? c.y : undefined,
+    zone: typeof c.zone === "string" ? c.zone : null,
     note: typeof c.note === "string" ? c.note.slice(0, 140) : undefined,
     by: typeof c.by === "string" ? c.by : "",
     at: c.at,
@@ -157,6 +170,38 @@ export interface AdminMessage {
   fromUuid?: string;
   fromName: string;
   text: string;
+  /**
+   * Message de modération (staff ou admin) : affiché avec l'étiquette "Modération".
+   * Le destinataire vérifie que l'expéditeur est bien staff ou admin avant de l'afficher.
+   */
+  moderation?: boolean;
+}
+
+/** La modération coupe le micro de la personne `to`. Elle peut le rallumer ensuite. */
+export interface ModMute {
+  v: number;
+  id: string;
+  to: string;
+  fromUuid: string;
+  fromName: string;
+}
+
+/**
+ * Qui peut modérer qui : l'admin peut agir sur tout le monde (sauf lui-même), le staff
+ * sur les autres personnes seulement, jamais sur un autre staff ni sur un admin.
+ */
+export function canModerate(sender: PresenceRole, target: PresenceRole): boolean {
+  if (sender === "admin") return true;
+  if (sender === "staff") return target !== "staff" && target !== "admin";
+  return false;
+}
+
+export function isModMute(v: unknown): v is ModMute {
+  if (!v || typeof v !== "object") return false;
+  const m = v as Record<string, unknown>;
+  return (
+    typeof m.to === "string" && typeof m.id === "string" && typeof m.fromUuid === "string" && typeof m.fromName === "string"
+  );
 }
 
 export type AckKind = "message" | "summon";
