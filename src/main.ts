@@ -5,6 +5,7 @@ import { closeDialog } from "@workadventure/npc-dialog-box";
 import { startShowroomTutorial } from "./showroomTutorial";
 import { initTagColors } from "./tagColors";
 import { initPresence } from "./presence";
+import { initCowork } from "./cowork";
 import { initDiagnostics } from "./diagnostics";
 
 console.info('Script started successfully');
@@ -24,9 +25,9 @@ WA.onInit().then(() => {
     initTagColors().catch(e => console.error("[couleurs]", e));
 
     // Liste des tags autorisés à traverser (basée sur votre script)
-    // "admin" (admins WorkAdventure) passe partout.
-    const authorizedTags = ["premium", "admin"];
-    const authorizedTagsEntrance = ["member", "premium", "admin"];
+    // "admin" (admins WorkAdventure) et "staff" (équipe) passent partout.
+    const authorizedTags = ["premium", "staff", "admin"];
+    const authorizedTagsEntrance = ["member", "premium", "staff", "admin"];
 
     // Vérifier si l'utilisateur possède au moins un des tags
     const hasAuthorizedTag = authorizedTags.some(tag => userTags.includes(tag));
@@ -61,6 +62,11 @@ WA.onInit().then(() => {
     // Présence : permet à l'onglet Admin de lister les personnes du campus,
     // d'aller vers elles, de les faire venir ou de leur envoyer un message.
     initPresence();
+    try {
+        initCowork();
+    } catch (e) {
+        console.warn("[cowork]", e);
+    }
 
     // Boutons "Partager" (invitation) : celui de la barre d'actions ET celui de la liste des
     // personnes du panneau de gauche dépendent du même réglage de WorkAdventure, ils

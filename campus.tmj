@@ -3687,6 +3687,23 @@
                  "y":0
                 }, 
                 {
+                 "height":32,
+                 "id":39,
+                 "name":"staffCommand",
+                 "properties":[
+                        {
+                         "name":"writableBy",
+                         "type":"string",
+                         "value":"staff"
+                        }],
+                 "rotation":0,
+                 "type":"variable",
+                 "visible":true,
+                 "width":32,
+                 "x":64,
+                 "y":0
+                }, 
+                {
                  "height":1040,
                  "id":20,
                  "name":"zoneEvent",
@@ -5612,7 +5629,7 @@
          "y":0
         }],
  "nextlayerid":93,
- "nextobjectid":39,
+ "nextobjectid":40,
  "orientation":"orthogonal",
  "properties":[
         {
