@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ma bulle</title>
+<script src="https://play.workadventu.re/iframe_api.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; font-family: Inter, system-ui, sans-serif; font-size: 14px; color: #1d1d23; }
+  * { box-sizing: border-box; }
+  button { font: inherit; cursor: pointer; }
+  #pill { display: none; width: 100%; height: 100vh; padding: 0 12px; border: 1px solid #6e1fff; background: #6e1fff; color: #fff; font-weight: 600; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+  #pill:hover { background: #4a04be; border-color: #4a04be; }
+  #card { display: none; height: 100vh; flex-direction: column; background: #fff; border: 1px solid rgba(20,16,35,.18); box-shadow: 0 4px 18px rgba(0,0,0,.28); }
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-bottom: 1px solid rgba(20,16,35,.12); }
+  .head strong { font-size: 14px; }
+  .x { width: 30px; height: 30px; border: 1px solid rgba(20,16,35,.18); background: #fff; font-size: 18px; line-height: 1; }
+  .x:hover { background: #6e1fff; border-color: #6e1fff; color: #fff; }
+  .list { flex: 1; min-height: 0; overflow-y: auto; padding: 2px 10px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 40px; border-bottom: 1px solid rgba(20,16,35,.08); }
+  .name { overflow-wrap: anywhere; min-width: 0; }
+  .btn { min-height: 32px; padding: 0 10px; border: 1px solid rgba(20,16,35,.22); background: #fff; font-size: 13px; font-weight: 500; white-space: nowrap; }
+  .btn:hover:not(:disabled) { border-color: #6e1fff; color: #6e1fff; }
+  .btn.all { background: #6e1fff; border-color: #6e1fff; color: #fff; width: 100%; min-height: 38px; }
+  .btn.all:hover:not(:disabled) { background: #4a04be; border-color: #4a04be; color: #fff; }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .foot { padding: 8px 10px; border-top: 1px solid rgba(20,16,35,.12); display: grid; gap: 6px; }
+  .note { font-size: 12px; color: #55525e; margin: 0; }
+  .ok { color: #2e9e1b; } .err { color: #b3261e; }
+  button:focus-visible { outline: 3px solid #6e1fff; outline-offset: 2px; }
+</style>
+</head>
+<body>
+<button id="pill" type="button" aria-label="Ouvrir la liste de ma bulle"></button>
+<div id="card">
+  <div class="head"><strong id="title"></strong><button class="x" id="fold" type="button" aria-label="Replier">&times;</button></div>
+  <div class="list" id="list"></div>
+  <div class="foot">
+    <button class="btn all" id="all" type="button"></button>
+    <p class="note" id="msg">Le staff et les admins ne sont pas concernés.</p>
+  </div>
+</div>
+<script>
+(function () {
+  var COLLAPSED = { width: "200px", height: "48px" };
+  var me = null;
+  var collapsed = false;
+  var busy = false;
+
+  function people() {
+    try {
+      var raw = new URLSearchParams(location.hash.replace(/^#/, "")).get("p");
+      var list = JSON.parse(raw || "[]");
+      return Array.isArray(list) ? list.filter(function (p) { return p && p.uuid && p.name; }).slice(0, 40) : [];
+    } catch (e) { return []; }
+  }
+
+  function applySize(n) {
+    if (typeof WA === "undefined") return;
+    WA.ui.website.getById(WA.iframeId).then(function (w) {
+      if (!w) return;
+      w.size = collapsed ? COLLAPSED : { width: "270px", height: Math.min(150 + 40 * n, 460) + "px" };
+    }).catch(function () {});
+  }
+
+  function send(targets) {
+    if (!me || busy || targets.length === 0) return;
+    busy = true;
+    var cmd = {
+      v: 1,
+      id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8),
+      action: "mute", reason: "other",
+      targets: targets.map(function (t) { return { uuid: t.uuid, sessionId: "" }; }),
+      by: me.name, byUuid: me.uuid, at: Date.now()
+    };
+    var variable = me.admin ? "adminCommand" : "staffCommand";
+    Promise.resolve(WA.state.saveVariable(variable, JSON.stringify(cmd))).then(function () {
+      say(targets.length === 1 ? "Micro de " + targets[0].name + " coupé." : targets.length + " micros coupés.", true);
+    }).catch(function () {
+      say("La coupure n'a pas pu partir. Réessaie.", false);
+    }).then(function () { busy = false; });
+  }
+
+  function say(text, ok) {
+    var m = document.getElementById("msg");
+    m.textContent = text;
+    m.className = "note " + (ok ? "ok" : "err");
+  }
+
+  function render() {
+    var list = people();
+    var n = list.length;
+    document.getElementById("pill").textContent = "Ma bulle · " + n;
+    document.getElementById("pill").style.display = collapsed ? "block" : "none";
+    document.getElementById("card").style.display = collapsed ? "none" : "flex";
+    document.getElementById("title").textContent = "Ma bulle · " + n + (n > 1 ? " personnes" : " personne");
+    var box = document.getElementById("list");
+    box.textContent = "";
+    list.forEach(function (p) {
+      var row = document.createElement("div"); row.className = "row";
+      var name = document.createElement("span"); name.className = "name"; name.textContent = p.name;
+      var b = document.createElement("button"); b.className = "btn"; b.type = "button"; b.textContent = "Couper le micro";
+      b.addEventListener("click", function () { send([p]); });
+      row.appendChild(name); row.appendChild(b); box.appendChild(row);
+    });
+    var all = document.getElementById("all");
+    all.textContent = n > 1 ? "Couper les micros de tout le monde" : "Couper le micro";
+    all.onclick = function () { send(people()); };
+    applySize(n);
+  }
+
+  document.getElementById("pill").addEventListener("click", function () { collapsed = false; render(); });
+  document.getElementById("fold").addEventListener("click", function () { collapsed = true; render(); });
+  window.addEventListener("hashchange", render);
+
+  render();
+  if (typeof WA !== "undefined") {
+    WA.onInit().then(function () {
+      var tags = WA.player.tags || [];
+      me = { uuid: WA.player.uuid || "", name: WA.player.name || "Modération", admin: tags.indexOf("admin") !== -1 };
+      render();
+    });
+  }
+})();
+</script>
+</body>
+</html>

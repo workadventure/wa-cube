@@ -5,6 +5,8 @@ import { closeDialog } from "@workadventure/npc-dialog-box";
 import { startShowroomTutorial } from "./showroomTutorial";
 import { initTagColors } from "./tagColors";
 import { initPresence } from "./presence";
+import { initBubbleModeration } from "./moderation/bubble";
+import { initArrival } from "./arrival";
 import { initCowork } from "./cowork";
 import { initDiagnostics } from "./diagnostics";
 
@@ -62,6 +64,12 @@ WA.onInit().then(() => {
     // Présence : permet à l'onglet Admin de lister les personnes du campus,
     // d'aller vers elles, de les faire venir ou de leur envoyer un message.
     initPresence();
+    try {
+        initBubbleModeration();
+    } catch (e) {
+        console.warn("[modération] bulle", e);
+    }
+    initArrival();
     try {
         initCowork();
     } catch (e) {

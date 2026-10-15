@@ -169,7 +169,7 @@ function isForMe(to: string): boolean {
 /** Tags des personnes connectées, tenus par le serveur (donc non falsifiables par un joueur). */
 const tagsByUuid = new Map<string, string[]>();
 
-function roleOf(uuid: string) {
+export function roleOf(uuid: string) {
   const tags = tagsByUuid.get(uuid);
   return tags ? roleFromTags(tags, true) : null;
 }
