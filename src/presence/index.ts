@@ -196,8 +196,10 @@ function cutMyMicrophone(id: string, byName: string, byUuid: string | undefined)
 }
 
 /**
- * Staff et admin : au clic sur l'avatar de quelqu'un, trois actions directes (couper son micro,
- * couper les micros de sa bulle, demander de déverrouiller à toute la bulle).
+ * Staff et admin : au clic sur l'avatar de quelqu'un, deux actions directes aux libellés courts, pour
+ * que la carte de la personne reste étroite : « Couper micro » et « Déverrouiller » (demande envoyée à
+ * toute la bulle). Couper les micros d'une bulle entière passe par la liste « Ma bulle » (staff) ou le
+ * menu natif des vignettes (admins).
  */
 function initModerationMenu(): void {
   const myRole = roleFromTags(WA.player.tags ?? [], WA.player.isLogged === true);
@@ -274,7 +276,7 @@ function initModerationMenu(): void {
     const list: { remove(): void }[] = [];
 
     list.push(
-      remote.addAction("Couper son micro", () => {
+      remote.addAction("Couper micro", () => {
         const role = roleOf(remote.uuid);
         if (role && !canModerate(myRole, role)) {
           feedback("Tu ne peux pas viser cette personne.");
@@ -284,15 +286,9 @@ function initModerationMenu(): void {
       }),
     );
 
-    list.push(
-      remote.addAction("Couper les micros de sa bulle", () => {
-        void muteMany(groupOf(remote));
-      }),
-    );
-
     // Une bulle verrouillée ne se déverrouille pas par script : on demande poliment, à toute la bulle.
     list.push(
-      remote.addAction("Demander de déverrouiller", async () => {
+      remote.addAction("Déverrouiller", async () => {
         const targets = groupOf(remote).filter((t) => Date.now() - (unlockAskedAt.get(t.uuid) ?? 0) > 30_000);
         if (targets.length === 0) {
           feedback("La demande a déjà été envoyée à cette bulle.");

@@ -9,17 +9,21 @@
   html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; font-family: Inter, system-ui, sans-serif; font-size: 14px; color: #1d1d23; }
   * { box-sizing: border-box; }
   button { font: inherit; cursor: pointer; }
-  #pill { display: none; width: 100%; height: 100vh; padding: 0 12px; border: 1px solid #6e1fff; background: #6e1fff; color: #fff; font-weight: 600; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+  #bar { display: none; height: 100vh; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+  #pill { flex: 1; min-width: 0; height: 100%; padding: 0 14px; border: 1px solid #6e1fff; background: #6e1fff; color: #fff; font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; }
   #pill:hover { background: #4a04be; border-color: #4a04be; }
+  #hide { flex: none; width: 44px; height: 100%; border: 1px solid #6e1fff; border-left: 1px solid rgba(255,255,255,.35); background: #6e1fff; color: #fff; font-size: 20px; line-height: 1; }
+  #hide:hover { background: #4a04be; border-color: #4a04be; }
   #card { display: none; height: 100vh; flex-direction: column; background: #fff; border: 1px solid rgba(20,16,35,.18); box-shadow: 0 4px 18px rgba(0,0,0,.28); }
   .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-bottom: 1px solid rgba(20,16,35,.12); }
-  .head strong { font-size: 14px; }
+  .head strong { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .tools { display: flex; gap: 6px; flex: none; }
   .x { width: 30px; height: 30px; border: 1px solid rgba(20,16,35,.18); background: #fff; font-size: 18px; line-height: 1; }
   .x:hover { background: #6e1fff; border-color: #6e1fff; color: #fff; }
   .list { flex: 1; min-height: 0; overflow-y: auto; padding: 2px 10px; }
   .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 40px; border-bottom: 1px solid rgba(20,16,35,.08); }
-  .name { overflow-wrap: anywhere; min-width: 0; }
-  .btn { min-height: 32px; padding: 0 10px; border: 1px solid rgba(20,16,35,.22); background: #fff; font-size: 13px; font-weight: 500; white-space: nowrap; }
+  .name { overflow-wrap: anywhere; min-width: 0; flex: 1; }
+  .btn { flex: none; min-height: 32px; padding: 0 10px; border: 1px solid rgba(20,16,35,.22); background: #fff; font-size: 13px; font-weight: 500; white-space: nowrap; }
   .btn:hover:not(:disabled) { border-color: #6e1fff; color: #6e1fff; }
   .btn.all { background: #6e1fff; border-color: #6e1fff; color: #fff; width: 100%; min-height: 38px; }
   .btn.all:hover:not(:disabled) { background: #4a04be; border-color: #4a04be; color: #fff; }
@@ -31,9 +35,9 @@
 </style>
 </head>
 <body>
-<button id="pill" type="button" aria-label="Ouvrir la liste de ma bulle"></button>
+<div id="bar"><button id="pill" type="button" aria-label="Déplier la liste de ma bulle"></button><button id="hide" type="button" aria-label="Masquer" title="Masquer (rouvrir par le menu du jeu)">&times;</button></div>
 <div id="card">
-  <div class="head"><strong id="title"></strong><button class="x" id="fold" type="button" aria-label="Replier">&times;</button></div>
+  <div class="head"><strong id="title"></strong><div class="tools"><button class="x" id="fold" type="button" aria-label="Réduire" title="Réduire">&minus;</button><button class="x" id="hide2" type="button" aria-label="Masquer" title="Masquer (rouvrir par le menu du jeu)">&times;</button></div></div>
   <div class="list" id="list"></div>
   <div class="foot">
     <button class="btn all" id="all" type="button"></button>
@@ -42,7 +46,7 @@
 </div>
 <script>
 (function () {
-  var COLLAPSED = { width: "200px", height: "48px" };
+  var COLLAPSED = { width: "270px", height: "46px" };
   var me = null;
   var collapsed = false;
   var busy = false;
@@ -59,7 +63,7 @@
     if (typeof WA === "undefined") return;
     WA.ui.website.getById(WA.iframeId).then(function (w) {
       if (!w) return;
-      w.size = collapsed ? COLLAPSED : { width: "270px", height: Math.min(150 + 40 * n, 460) + "px" };
+      w.size = collapsed ? COLLAPSED : { width: "350px", height: Math.min(150 + 42 * n, 460) + "px" };
     }).catch(function () {});
   }
 
@@ -90,8 +94,8 @@
   function render() {
     var list = people();
     var n = list.length;
-    document.getElementById("pill").textContent = "Ma bulle · " + n;
-    document.getElementById("pill").style.display = collapsed ? "block" : "none";
+    document.getElementById("pill").textContent = "Ma bulle · " + n + (n > 1 ? " personnes" : " personne");
+    document.getElementById("bar").style.display = collapsed ? "flex" : "none";
     document.getElementById("card").style.display = collapsed ? "none" : "flex";
     document.getElementById("title").textContent = "Ma bulle · " + n + (n > 1 ? " personnes" : " personne");
     var box = document.getElementById("list");
@@ -111,6 +115,13 @@
 
   document.getElementById("pill").addEventListener("click", function () { collapsed = false; render(); });
   document.getElementById("fold").addEventListener("click", function () { collapsed = true; render(); });
+  // Masquer : le script ferme le cadre ; il se rouvre à l'entrée dans une bulle ou par le menu du jeu.
+  function hide() {
+    if (typeof WA === "undefined") return;
+    WA.player.state.saveVariable("bulleMasquee", true, { public: false, persist: false }).catch(function () {});
+  }
+  document.getElementById("hide").addEventListener("click", hide);
+  document.getElementById("hide2").addEventListener("click", hide);
   window.addEventListener("hashchange", render);
 
   render();
