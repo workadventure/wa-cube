@@ -102,7 +102,7 @@ export function initBubbleModeration(): void {
 
   // Rouvrir à tout moment par le menu de WorkAdventure (en haut à droite).
   try {
-    WA.ui.registerMenuCommand("Liste de ma bulle", () => {
+    WA.ui.registerMenuCommand("Afficher la liste de ma bulle", () => {
       setHidden(false);
       void refresh();
     });
