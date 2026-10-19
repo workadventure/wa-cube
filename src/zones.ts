@@ -92,11 +92,11 @@ export function canEnterAt(tags: readonly string[], x: number, y: number): boole
   return tagsAllow(accessAt(x, y), tags);
 }
 
-/** Complète "réservé" / "réservée" : "Cet endroit est réservé aux comptes premium". */
+/** Complète "réservé" / "réservée" : "Cet endroit est réservé aux élèves en cours de formation". */
 export function accessRule(level: AccessLevel): string {
   switch (level) {
     case "premium":
-      return "aux comptes premium";
+      return "aux élèves en cours de formation";
     case "membre":
       return "aux membres (compte member ou premium)";
     case "staff":

@@ -9,6 +9,7 @@ import { initBubbleModeration } from "./moderation/bubble";
 import { initArrival } from "./arrival";
 import { initCowork } from "./cowork";
 import { initDiagnostics } from "./diagnostics";
+import { initRoofs } from "./roofs";
 
 console.info('Script started successfully');
 
@@ -64,6 +65,8 @@ WA.onInit().then(() => {
     // Présence : permet à l'onglet Admin de lister les personnes du campus,
     // d'aller vers elles, de les faire venir ou de leur envoyer un message.
     initPresence();
+    // Toits : remis d'équerre après une téléportation (les entrées de zone ne sont pas toujours signalées).
+    initRoofs();
     try {
         initBubbleModeration();
     } catch (e) {

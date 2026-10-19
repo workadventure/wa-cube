@@ -7,8 +7,8 @@ import { roleFromTags } from "../presence/protocol";
    Modération depuis la bulle (staff, hors admins)
    ---------------------------------------------------------
    Quand on est dans une bulle ou une salle de réunion avec d'autres personnes, la liste des
-   participants s'affiche en bas à gauche avec leur nombre : « Couper le micro » par personne et
-   « Couper les micros de tout le monde », en un clic. Elle se replie en pastille.
+   participants s'affiche en bas, au-dessus de la pastille Cowork, avec leur nombre : un micro à cliquer
+   par personne (il se barre) et « Couper tout le monde », en un clic. Elle se replie en pastille.
    La page est un fichier de la carte (public/bulle.html) : aucun site externe. Elle envoie les
    commandes par les variables vérifiées par le serveur (adminCommand pour les admins,
    staffCommand pour le staff).
@@ -62,13 +62,13 @@ async function refresh(): Promise<void> {
       url,
       allowApi: true,
       visible: true,
-      // En bas, au centre, juste à droite de la pastille « Cowork » (centrée, 220 px de large) :
-      // en cowork, le staff voit les deux côte à côte. Rien ne recouvre les boutons natifs
+      // En bas, au centre, AU-DESSUS de la pastille « Cowork » (48 px de haut, 14 px du bas) : rien ne se
+      // recouvre, quelle que soit la largeur de la fenêtre, et les boutons natifs restent libres
       // (barre du haut, chat à gauche, zoom en bas à droite).
-      position: { vertical: "bottom", horizontal: "left" },
+      position: { vertical: "bottom", horizontal: "middle" },
       // Taille ajustée ensuite par la page elle-même (déplié, replié, nombre de personnes).
-      size: { width: "350px", height: "220px" },
-      margin: { bottom: "14px", left: "calc(50% + 130px)" },
+      size: { width: "460px", height: "260px" },
+      margin: { bottom: "74px" },
     });
   })().finally(() => {
     opening = null;
