@@ -1,6 +1,6 @@
 /// <reference types="@workadventure/iframe-api-typings" />
 
-import { accessAt, accessRule, canEnterAt, zoneAt } from "./zones";
+import { accessAt, accessDenied, canEnterAt, zoneAt } from "./zones";
 
 /* =========================================================
    Arrivée directe par lien d'invitation
@@ -44,7 +44,7 @@ const ENTRANCE = { x: 3200, y: 4160 };
  */
 function explainRefusal(x: number, y: number): void {
   const place = zoneAt(x, y) ?? "cet endroit";
-  const text = `Tu ne peux pas aller à ${place} : cet endroit est réservé ${accessRule(accessAt(x, y))}. Tu restes à l'entrée. Contacte la personne qui t'a invité pour en savoir plus.`;
+  const text = `Tu ne peux pas aller à ${place}. ${accessDenied(accessAt(x, y))} Tu restes à l'entrée. Contacte la personne qui t'a invité pour en savoir plus.`;
   try {
     WA.ui.banner.openBanner({
       id: "acces-refuse",

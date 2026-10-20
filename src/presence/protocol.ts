@@ -70,6 +70,8 @@ export interface PresenceInfo {
   sessionId?: string;
   /** Temps écoulé sans déplacement dans cet onglet (ms). */
   idleMs?: number;
+  /** Tags tels que le navigateur de cette personne les connaît (jeton de connexion), pour repérer un décalage avec son compte. */
+  tags?: string[];
 }
 
 export type KickReason = "inactive" | "entrance" | "duplicate" | "other";

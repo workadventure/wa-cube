@@ -159,6 +159,7 @@ async function myInfo(): Promise<PresenceInfo> {
     connectedAt,
     sessionId,
     idleMs: Math.max(0, Date.now() - lastMoveAt),
+    tags: [...tags],
   };
 }
 
