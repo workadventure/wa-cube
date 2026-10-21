@@ -76,7 +76,15 @@ export async function initNews(): Promise<void> {
     margin: { top: BELL_TOP, left: BELL_LEFT },
   });
   WA.player.state.onVariableChange("newsOpen").subscribe(() => openList());
-  WA.player.state.onVariableChange("newsTick").subscribe(() => void refresh());
+  // Le volet donne directement le nombre restant ; on le relit aussi sur le serveur pour confirmer.
+  WA.player.state.onVariableChange("newsTick").subscribe((value) => {
+    const left = (value as { unread?: unknown } | undefined)?.unread;
+    if (typeof left === "number" && left !== unread) {
+      unread = left;
+      if (site) site.url = pageUrl();
+    }
+    void refresh();
+  });
   void refresh();
   setInterval(() => void refresh(), REFRESH_MS);
 }
