@@ -12,6 +12,7 @@ import { initDiagnostics } from "./diagnostics";
 import { initRoofs } from "./roofs";
 import { initAccessRules } from "./accessRules";
 import { initRestrictedAreas } from "./restricted";
+import { initAudioWatch } from "./audioWatch";
 
 console.info('Script started successfully');
 
@@ -97,6 +98,8 @@ WA.onInit().then(() => {
     // Chronologie des dernières minutes pour le bouton "Signaler un problème" (Plan & FAQ).
     try {
         initDiagnostics();
+        // Allers-retours répétés dans une conversation : relevé technique automatique pour comprendre les problèmes de son.
+        initAudioWatch();
     } catch (e) {
         console.warn("[diagnostic]", e);
     }

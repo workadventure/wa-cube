@@ -6,7 +6,7 @@
 <title>Ma bulle</title>
 <script src="https://play.workadventu.re/iframe_api.js"></script>
 <style>
-  html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; font-family: Inter, system-ui, sans-serif; font-size: 14px; color: #1d1d23; }
+  html, body { margin: 0; padding: 0; background: transparent; color-scheme: dark; overflow: hidden; font-family: Inter, system-ui, sans-serif; font-size: 14px; color: #fff; }
   * { box-sizing: border-box; }
   button { font: inherit; cursor: pointer; }
   /* Repliée : une bulle ronde, pour ne pas ressembler à un bouton classique */
@@ -18,39 +18,46 @@
   #hide { position: absolute; top: -4px; right: -4px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; background: #1d1d23; color: #fff; font-size: 13px; line-height: 1; padding: 0; }
   #hide:hover { background: #b3261e; }
   /* Dépliée : une grande bulle aux coins arrondis, sans barre de défilement tant qu'elle tient */
-  #card { display: none; height: 100vh; flex-direction: column; background: #fff; border: 2px solid #6e1fff; border-radius: 26px; box-shadow: 0 6px 24px rgba(0,0,0,.32); overflow: hidden; }
+  #card { display: none; height: 100vh; flex-direction: column; background: rgba(28,24,40,.94); border: 2px solid #6e1fff; border-radius: 26px; box-shadow: 0 6px 24px rgba(0,0,0,.4); overflow: hidden; }
   .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px 10px 18px; }
   .head strong { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .tools { display: flex; gap: 6px; flex: none; }
-  .x { width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(20,16,35,.18); background: #fff; font-size: 18px; line-height: 1; padding: 0; }
+  .mode { display: inline-flex; align-items: center; gap: 4px; flex: none; margin-left: 8px; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 800; letter-spacing: .3px; }
+  .mode.p2p { background: rgba(126,224,105,.18); color: #9be88a; border: 1px solid rgba(126,224,105,.5); }
+  .mode.livekit { background: #6e1fff; color: #fff; border: 1px solid #b58bff; }
+  .sw { display: inline-flex; align-items: center; gap: 3px; flex: none; margin-left: 6px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; background: rgba(255,177,66,.2); color: #ffc46b; border: 1px solid rgba(255,177,66,.6); }
+  .sw.flash { animation: flash 1s ease-in-out 4; }
+  @keyframes flash { 50% { background: #ffb142; color: #1d1d23; } }
+  .head .left { display: flex; align-items: center; min-width: 0; }
+  .x { width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: transparent; color: #fff; font-size: 18px; line-height: 1; padding: 0; }
   .x:hover { background: #6e1fff; border-color: #6e1fff; color: #fff; }
   .list { flex: 1; min-height: 0; overflow-y: auto; padding: 0 14px; scrollbar-width: thin; }
-  .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 54px; border-top: 1px solid rgba(20,16,35,.08); }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 54px; border-top: 1px solid rgba(255,255,255,.12); }
   .name { min-width: 0; flex: 1; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* Micro : l'émoji suffit ; un clic coupe le micro et le barre */
-  .mic { position: relative; flex: none; width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(20,16,35,.2); background: #fff; font-size: 21px; line-height: 1; padding: 0; }
-  .mic:hover { border-color: #6e1fff; background: #f3edff; }
-  .mic.off { background: #fdecea; border-color: #b3261e; }
-  .mic.off::after { content: ""; position: absolute; left: 7px; right: 7px; top: 50%; height: 3px; background: #b3261e; border-radius: 2px; box-shadow: 0 0 0 2px #fff; transform: rotate(-45deg); }
-  .btn { flex: none; min-height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid rgba(20,16,35,.22); background: #fff; font-size: 13px; font-weight: 500; white-space: nowrap; }
-  .btn:hover:not(:disabled) { border-color: #6e1fff; color: #6e1fff; }
+  .mic { position: relative; flex: none; width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.1); font-size: 21px; line-height: 1; padding: 0; }
+  .mic:hover { border-color: #b58bff; background: rgba(110,31,255,.5); }
+  .mic.off { background: rgba(179,38,30,.4); border-color: #ff6b62; }
+  .mic.off::after { content: ""; position: absolute; left: 7px; right: 7px; top: 50%; height: 3px; background: #ff6b62; border-radius: 2px; box-shadow: 0 0 0 2px rgba(28,24,40,.9); transform: rotate(-45deg); }
+  .btn { flex: none; min-height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,.35); background: transparent; color: #fff; font-size: 13px; font-weight: 500; white-space: nowrap; }
+  .btn:hover:not(:disabled) { border-color: #b58bff; color: #fff; background: rgba(110,31,255,.4); }
   .btn.cut { background: #6e1fff; border-color: #6e1fff; color: #fff; }
   .btn.cut:hover:not(:disabled) { background: #4a04be; border-color: #4a04be; color: #fff; }
-  .btn.all { border-color: #b3261e; color: #b3261e; }
-  .btn.all:hover:not(:disabled) { background: #fdecea; border-color: #b3261e; color: #b3261e; }
+  .btn.all { border-color: #ff8a82; color: #ff8a82; }
+  .btn.all:hover:not(:disabled) { background: rgba(179,38,30,.35); border-color: #ff8a82; color: #fff; }
   .btn.danger { background: #b3261e; border-color: #b3261e; color: #fff; }
   .btn:disabled { opacity: .55; cursor: default; }
-  .foot { padding: 10px 14px 14px; display: grid; gap: 8px; border-top: 1px solid rgba(20,16,35,.08); }
+  .foot { padding: 10px 14px 14px; display: grid; gap: 8px; border-top: 1px solid rgba(255,255,255,.12); }
   .foot .confirm { display: flex; gap: 8px; }
-  .note { font-size: 12px; color: #55525e; margin: 0; }
-  .ok { color: #2e9e1b; } .err { color: #b3261e; }
+  .note { font-size: 12px; color: rgba(255,255,255,.72); margin: 0; }
+  .ok { color: #7ee069; } .err { color: #ff8a82; }
   button:focus-visible { outline: 3px solid #6e1fff; outline-offset: 2px; }
 </style>
 </head>
 <body>
-<div id="bar"><button id="pill" type="button" aria-label="Déplier la liste de ma bulle"><b id="count">0</b><small>bulle</small></button><button id="hide" type="button" aria-label="Masquer complètement" title="Masquer complètement (rouvrir par le menu du jeu)">&times;</button></div>
+<div id="bar"><button id="pill" type="button" aria-label="Déplier la liste de ma bulle"><b id="count">0</b><small id="pillmode">bulle</small></button><button id="hide" type="button" aria-label="Masquer complètement" title="Masquer complètement (rouvrir par le menu du jeu)">&times;</button></div>
 <div id="card">
-  <div class="head"><strong id="title"></strong><div class="tools"><button class="x" id="fold" type="button" aria-label="Réduire en bulle" title="Réduire en bulle ronde">&times;</button></div></div>
+  <div class="head"><div class="left"><strong id="title"></strong><span class="mode" id="mode" style="display:none"></span><span class="sw" id="sw" style="display:none"></span></div><div class="tools"><button class="x" id="fold" type="button" aria-label="Réduire en bulle" title="Réduire en bulle ronde">&times;</button></div></div>
   <div class="list" id="list"></div>
   <div class="foot" id="foot">
     <button class="btn all" id="all" type="button">🎤 Couper tout le monde…</button>
@@ -75,6 +82,15 @@
       return Array.isArray(list) ? list.filter(function (p) { return p && p.uuid && p.name; }).slice(0, 40) : [];
     } catch (e) { return []; }
   }
+
+  function info() {
+    var q = new URLSearchParams(location.hash.replace(/^#/, ""));
+    var n = parseInt(q.get("n") || "0", 10) || 0;
+    var m = q.get("m") === "livekit" ? "livekit" : (q.get("m") === "p2p" ? "p2p" : "");
+    var sw = parseInt(q.get("sw") || "0", 10) || 0;
+    return { n: n, m: m, sw: sw };
+  }
+  var lastSw = 0;
 
   function applySize(n) {
     if (typeof WA === "undefined") return;
@@ -114,7 +130,25 @@
     document.getElementById("count").textContent = String(n);
     document.getElementById("bar").style.display = collapsed ? "flex" : "none";
     document.getElementById("card").style.display = collapsed ? "none" : "flex";
-    document.getElementById("title").textContent = "Ma bulle · " + n + (n > 1 ? " personnes" : " personne");
+    var inf = info();
+    var tot = inf.n || n;
+    document.getElementById("title").textContent = "Ma bulle · " + tot + (tot > 1 ? " personnes" : " personne");
+    var mode = document.getElementById("mode");
+    if (inf.m) {
+      mode.style.display = "inline-flex";
+      mode.className = "mode " + inf.m;
+      mode.textContent = inf.m === "livekit" ? "LiveKit" : "P2P";
+      mode.title = "Mode estimé d'après le nombre de personnes : 5 et plus, la conversation passe par le serveur (LiveKit) ; en dessous, en direct (P2P).";
+      document.getElementById("pillmode").textContent = inf.m === "livekit" ? "LiveKit" : "P2P";
+    } else { mode.style.display = "none"; document.getElementById("pillmode").textContent = "bulle"; }
+    var sw = document.getElementById("sw");
+    if (inf.sw > 0) {
+      sw.style.display = "inline-flex";
+      sw.textContent = "\u21C4 " + inf.sw;
+      sw.title = inf.sw + " bascule" + (inf.sw > 1 ? "s" : "") + " entre P2P et LiveKit ces 10 dernières minutes : chaque bascule peut couper le son de quelqu'un. Restez à 6 ou plus, ou à 4 au plus, pour qu'elle cesse.";
+      sw.className = "sw" + (inf.sw > lastSw ? " flash" : "");
+    } else { sw.style.display = "none"; }
+    lastSw = inf.sw;
     var box = document.getElementById("list");
     box.textContent = "";
     list.forEach(function (p) {

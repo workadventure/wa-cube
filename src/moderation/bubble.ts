@@ -38,8 +38,38 @@ function targets(): { uuid: string; name: string }[] {
   });
 }
 
+/**
+ * Mode de communication probable. WorkAdventure ne l'expose pas : on l'estime d'après le nombre de personnes
+ * (moi compris). À 5 et plus, la conversation passe par le serveur LiveKit ; en dessous, en direct (pair à pair).
+ */
+const SERVER_THRESHOLD = 5;
+const SWITCH_WINDOW_MS = 10 * 60_000;
+let lastMode: "p2p" | "livekit" | null = null;
+const switches: number[] = [];
+
+/** Nombre de personnes dans la conversation, moi compris. */
+function total(): number {
+  return bubble.size + 1;
+}
+
+/** Met à jour le mode probable et compte les bascules des 10 dernières minutes. */
+function trackMode(): { mode: "p2p" | "livekit"; switches: number } {
+  const now = Date.now();
+  const mode = total() >= SERVER_THRESHOLD ? "livekit" : "p2p";
+  // Une conversation qui se vide (moi seul) n'est pas une bascule : on repart de zéro.
+  if (bubble.size === 0) {
+    lastMode = null;
+  } else {
+    if (lastMode !== null && lastMode !== mode) switches.push(now);
+    lastMode = mode;
+  }
+  while (switches.length > 0 && now - switches[0] > SWITCH_WINDOW_MS) switches.shift();
+  return { mode, switches: switches.length };
+}
+
 function urlFor(list: { uuid: string; name: string }[]): string {
-  const params = new URLSearchParams({ p: JSON.stringify(list.slice(0, 40)) });
+  const { mode, switches: sw } = trackMode();
+  const params = new URLSearchParams({ p: JSON.stringify(list.slice(0, 40)), n: String(total()), m: mode, sw: String(sw) });
   return `${pageUrl()}#${params.toString()}`;
 }
 
