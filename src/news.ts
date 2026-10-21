@@ -15,10 +15,15 @@ const COUNT_URL = "https://campus-entry-cube.lovable.app/api/public/news";
 const PAGE_URL = "https://campus-entry-cube.lovable.app/nouveautes";
 const REFRESH_MS = 2 * 60_000;
 
-/** Position de la cloche : juste à droite des deux boutons du chat (à régler si besoin). */
-const BELL_LEFT = "148px";
-const BELL_TOP = "12px";
-const BELL_SIZE = "64px";
+/**
+ * Position de la cloche : sur la ligne des boutons du chat, même hauteur (62 px), juste à droite.
+ * WorkAdventure place les fenêtres de site sous la barre du haut (environ 96 px) : le haut est donc négatif
+ * pour remonter sur la ligne des boutons. Valeurs par défaut ; le site peut les remplacer (réponse de
+ * /api/public/news, fichier src/lib/news-bell.ts du site) pour recaler la cloche sans redéployer la carte.
+ */
+const BELL_LEFT = "143px";
+const BELL_TOP = "-80px";
+const BELL_SIZE = "62px";
 
 type UIWebsite = Awaited<ReturnType<typeof WA.ui.website.open>>;
 
@@ -27,6 +32,27 @@ let unread = 0;
 
 function pageUrl(): string {
   return `${new URL("cloche.html", WA.room.mapURL).href}#n=${unread}`;
+}
+
+interface BellPlace {
+  left?: string;
+  top?: string;
+  size?: string;
+}
+
+/** Applique une position donnée par le site (valeurs en px seulement). */
+function placeBell(b: BellPlace | undefined): void {
+  if (!site || !b) return;
+  const px = (v: unknown) => (typeof v === "string" && /^-?\d{1,4}px$/.test(v) ? v : null);
+  const left = px(b.left);
+  const top = px(b.top);
+  const size = px(b.size);
+  try {
+    if (left || top) site.margin = { left: left ?? BELL_LEFT, top: top ?? BELL_TOP };
+    if (size) site.size = { width: size, height: size };
+  } catch (e) {
+    console.warn("[nouveautés] position non appliquée", e);
+  }
 }
 
 async function fetchUnread(): Promise<number | null> {
@@ -39,7 +65,8 @@ async function fetchUnread(): Promise<number | null> {
       headers: { "Content-Type": "text/plain" },
     });
     if (!res.ok) return null;
-    const body = (await res.json()) as { unread?: number };
+    const body = (await res.json()) as { unread?: number; bell?: BellPlace };
+    placeBell(body.bell);
     return typeof body.unread === "number" ? body.unread : null;
   } catch {
     return null;
