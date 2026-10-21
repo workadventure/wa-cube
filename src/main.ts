@@ -13,6 +13,7 @@ import { initRoofs } from "./roofs";
 import { initAccessRules } from "./accessRules";
 import { initRestrictedAreas } from "./restricted";
 import { initAudioWatch } from "./audioWatch";
+import { initNews } from "./news";
 
 console.info('Script started successfully');
 
@@ -79,6 +80,8 @@ WA.onInit().then(() => {
         console.warn("[modération] bulle", e);
     }
     initArrival();
+    // Cloche « Nouveautés » à côté du chat : messages et vidéos publiés par l'équipe, avec pastille tant qu'ils ne sont pas lus.
+    initNews().catch(e => console.warn("[nouveautés]", e));
     try {
         initCowork();
     } catch (e) {

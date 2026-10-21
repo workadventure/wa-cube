@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nouveautés</title>
+<script src="https://play.workadventu.re/iframe_api.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; font-family: Inter, system-ui, sans-serif; }
+  * { box-sizing: border-box; }
+  #wrap { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+  /* Même allure que les boutons du chat : carré sombre aux coins arrondis, icône blanche */
+  #bell { width: 48px; height: 48px; border-radius: 12px; border: 0; background: rgba(27,27,41,.92); color: #fff; display: grid; place-items: center; padding: 0; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+  #bell:hover { background: #3a3a55; }
+  #bell:focus-visible { outline: 3px solid #b58bff; outline-offset: 2px; }
+  #bell svg { width: 24px; height: 24px; transform-origin: 50% 10%; }
+  #bell.ring svg { animation: ring 1.2s ease-in-out 2; }
+  @keyframes ring { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(16deg); } 30% { transform: rotate(-14deg); } 45% { transform: rotate(10deg); } 60% { transform: rotate(-8deg); } 75% { transform: rotate(4deg); } }
+  #badge { position: absolute; top: 2px; right: 2px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: #6e1fff; color: #fff; border: 2px solid #fff; font-size: 12px; font-weight: 800; line-height: 18px; text-align: center; display: none; }
+  @media (prefers-reduced-motion: reduce) { #bell.ring svg { animation: none; } }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <button id="bell" type="button" aria-label="Nouveautés" title="Nouveautés">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+  </button>
+  <span id="badge" aria-hidden="true"></span>
+</div>
+<script>
+(function () {
+  var bell = document.getElementById("bell");
+  var badge = document.getElementById("badge");
+  var last = 0;
+
+  function count() {
+    var n = parseInt(new URLSearchParams(location.hash.replace(/^#/, "")).get("n") || "0", 10);
+    return isNaN(n) ? 0 : n;
+  }
+  function render() {
+    var n = count();
+    badge.style.display = n > 0 ? "block" : "none";
+    badge.textContent = n > 9 ? "9+" : String(n);
+    bell.setAttribute("aria-label", n > 0 ? "Nouveautés : " + n + " non lue" + (n > 1 ? "s" : "") : "Nouveautés");
+    // La cloche se secoue quand il y a plus de nouveautés non lues qu'avant
+    if (n > last) { bell.classList.remove("ring"); void bell.offsetWidth; bell.classList.add("ring"); }
+    last = n;
+  }
+
+  // Le clic passe par une variable du joueur : le script de la carte ouvre la fenêtre des nouveautés
+  bell.addEventListener("click", function () {
+    try { WA.player.state.saveVariable("newsOpen", Date.now(), { public: false, persist: false }); } catch (e) {}
+  });
+  window.addEventListener("hashchange", render);
+  render();
+})();
+</script>
+</body>
+</html>
