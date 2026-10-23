@@ -13,6 +13,7 @@ import { initRoofs } from "./roofs";
 import { initAccessRules } from "./accessRules";
 import { initRestrictedAreas } from "./restricted";
 import { initAudioWatch } from "./audioWatch";
+import { initSoundCheck } from "./soundCheck";
 import { initNews } from "./news";
 
 console.info('Script started successfully');
@@ -107,25 +108,34 @@ WA.onInit().then(() => {
         console.warn("[diagnostic]", e);
     }
 
+    const openPlan = () => {
+        WA.ui.modal.openModal({
+            title: "Navigation",
+            src: PLAN_URL,
+            // micro et caméra : test du micro et liste des périphériques
+            // dans le formulaire de signalement ; presse-papiers : bouton "Copier"
+            allow: "microphone; camera; clipboard-write",
+            allowApi: true,
+            position: "center",
+            closable: true,
+            allowFullScreen: false
+        });
+    };
+
+    // Prototype : son perdu détecté par les autres participants (tag test-son seulement).
+    try {
+        initSoundCheck(openPlan);
+    } catch (e) {
+        console.warn("[son]", e);
+    }
+
     WA.ui.actionBar.addButton({
         id: "nav-btn",
         label: "Plan & FAQ",
         bgColor: "#6D1FFF",
         textColor: "#FFFFFF",
         toolTip: "",
-        callback: () => {
-            WA.ui.modal.openModal({
-                title: "Navigation",
-                src: PLAN_URL,
-                // micro et caméra : test du micro et liste des périphériques
-                // dans le formulaire de signalement ; presse-papiers : bouton "Copier"
-                allow: "microphone; camera; clipboard-write",
-                allowApi: true,
-                position: "center",
-                closable: true,
-                allowFullScreen: false
-            });
-        }
+        callback: openPlan
     });
 
     // The line below bootstraps the Scripting API Extra library that adds a number of advanced properties/features to WorkAdventure

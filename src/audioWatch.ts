@@ -9,6 +9,11 @@
    bascules estimées entre P2P et LiveKit, navigateur, système, matériel et connexion.
    But : comprendre les problèmes de son et les corriger. Aucun contenu de conversation, aucun son, aucune image.
    Accès réservé aux admins du campus ; conservation de 90 jours (voir « Données et vie privée » dans l'onglet Aide).
+
+   Le relevé part SETTLE_MS après le retour : à l'entrée, WorkAdventure annonce d'abord une conversation vide,
+   puis les participants un par un (quelques dizaines de ms). Envoyé tout de suite, il disait toujours
+   « 1 personne, P2P, 0 bascule ». Les personnes et les bascules sont comptées sur toute la fenêtre de 10 minutes,
+   pas seulement sur la conversation en cours. L'arrivée de la liste initiale n'est pas une bascule.
    ========================================================= */
 
 const ENDPOINT = "https://campus-entry-cube.lovable.app/api/public/audio-incident";
@@ -17,16 +22,30 @@ const REJOIN_MAX_MS = 90_000;
 const WINDOW_MS = 10 * 60_000;
 const MIN_REJOINS = 2;
 const SEND_EVERY_MS = 10 * 60_000;
+/** Délai après l'entrée pendant lequel WorkAdventure annonce les participants déjà présents. */
+const SETTLE_MS = 5_000;
 /** À 5 personnes et plus, la conversation passe par le serveur (estimation). */
 const SERVER_THRESHOLD = 5;
 
-let current: { key: string; kind: string; name: string | null; n: number; crossings: number } | null = null;
+let current: { key: string; kind: string; name: string | null; n: number; joinedAt: number } | null = null;
 let lastLeave: { key: string; at: number } | null = null;
+/** Dernière conversation connue, pour la salle du relevé si la personne est ressortie avant l'envoi. */
+let last: { kind: string; name: string | null } | null = null;
 const rejoins: number[] = [];
+const crossings: number[] = [];
+/** Nombre de personnes relevé au fil du temps (moi compris), pour le pic sur la fenêtre. */
+const sizes: { at: number; n: number }[] = [];
 let lastSent = 0;
+let pending: ReturnType<typeof setTimeout> | null = null;
 
 function key(kind: string, name: string | null): string {
   return `${kind}:${name ?? ""}`;
+}
+
+function prune(now: number): void {
+  while (rejoins.length > 0 && now - rejoins[0] > WINDOW_MS) rejoins.shift();
+  while (crossings.length > 0 && now - crossings[0] > WINDOW_MS) crossings.shift();
+  while (sizes.length > 0 && now - sizes[0].at > WINDOW_MS) sizes.shift();
 }
 
 type NavExt = Navigator & {
@@ -59,20 +78,25 @@ function env(): Record<string, string | number | boolean | null> {
 }
 
 async function send(): Promise<void> {
+  pending = null;
   const now = Date.now();
-  if (!current || now - lastSent < SEND_EVERY_MS) return;
+  const where = current ?? last;
+  if (!where || now - lastSent < SEND_EVERY_MS) return;
   const token = WA.player.userRoomToken;
   if (!token) return;
+  prune(now);
+  // Pic de personnes sur la fenêtre : « jusqu'à N personnes » dans la page Admin.
+  const peak = Math.max(current?.n ?? 1, ...sizes.map((s) => s.n));
   lastSent = now;
   const body = {
     v: 1,
     token,
     name: WA.player.name,
-    room: current.name ?? current.kind,
-    kind: current.kind,
-    participants: current.n,
-    modeEstimate: current.n >= SERVER_THRESHOLD ? "livekit" : "p2p",
-    switches: current.crossings,
+    room: where.name ?? where.kind,
+    kind: where.kind,
+    participants: peak,
+    modeEstimate: peak >= SERVER_THRESHOLD ? "livekit" : "p2p",
+    switches: crossings.length,
     rejoins: rejoins.length,
     env: env(),
   };
@@ -87,11 +111,15 @@ async function send(): Promise<void> {
 function onJoin(kind: string, name: string | null, n: number): void {
   const now = Date.now();
   const k = key(kind, name);
-  current = { key: k, kind, name, n, crossings: 0 };
+  current = { key: k, kind, name, n, joinedAt: now };
+  last = { kind, name };
+  sizes.push({ at: now, n });
   if (lastLeave && lastLeave.key === k && now - lastLeave.at < REJOIN_MAX_MS) rejoins.push(now);
-  while (rejoins.length > 0 && now - rejoins[0] > WINDOW_MS) rejoins.shift();
+  prune(now);
   lastLeave = null;
-  if (rejoins.length >= MIN_REJOINS) void send();
+  if (rejoins.length >= MIN_REJOINS && !pending && now - lastSent >= SEND_EVERY_MS) {
+    pending = setTimeout(() => void send(), SETTLE_MS);
+  }
 }
 
 function onLeave(): void {
@@ -102,9 +130,13 @@ function onLeave(): void {
 
 function setN(n: number): void {
   if (!current) return;
+  const now = Date.now();
   const before = current.n;
   current.n = n;
-  if ((before < SERVER_THRESHOLD) !== (n < SERVER_THRESHOLD)) current.crossings++;
+  sizes.push({ at: now, n });
+  // Pendant SETTLE_MS, ce sont les personnes déjà présentes qui arrivent : pas une bascule.
+  const settled = now - current.joinedAt >= SETTLE_MS;
+  if (settled && (before < SERVER_THRESHOLD) !== (n < SERVER_THRESHOLD)) crossings.push(now);
 }
 
 /** À appeler une fois, après WA.onInit(). */
