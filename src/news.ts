@@ -16,14 +16,14 @@ const PAGE_URL = "https://campus-entry-cube.lovable.app/nouveautes";
 const REFRESH_MS = 2 * 60_000;
 
 /**
- * Position de la cloche : sur la ligne des boutons du chat, même hauteur (62 px), juste à droite.
+ * Position de la cloche : sur la ligne des boutons du chat, même hauteur (64 px : bouton de 48 px et 8 px de marge, comme WorkAdventure), juste à droite.
  * WorkAdventure place les fenêtres de site sous la barre du haut (environ 96 px) : le haut est donc négatif
  * pour remonter sur la ligne des boutons. Valeurs par défaut ; le site peut les remplacer (réponse de
  * /api/public/news, fichier src/lib/news-bell.ts du site) pour recaler la cloche sans redéployer la carte.
  */
 const BELL_LEFT = "143px";
 const BELL_TOP = "-80px";
-const BELL_SIZE = "62px";
+const BELL_SIZE = "64px";
 
 type UIWebsite = Awaited<ReturnType<typeof WA.ui.website.open>>;
 

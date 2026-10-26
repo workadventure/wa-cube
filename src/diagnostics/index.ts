@@ -35,6 +35,8 @@ const MAX_EVENTS = 60;
 /** Seuil observé par l'équipe : à partir de 5 personnes, la zone passe sur le serveur média. */
 const SERVER_THRESHOLD = 5;
 const WRITE_EVERY_MS = 4_000;
+/** Délai après l'entrée pendant lequel les participants déjà présents sont annoncés. */
+const SETTLE_MS = 5_000;
 
 const events: Ev[] = [];
 let snap: Snapshot = {
@@ -49,6 +51,11 @@ let snap: Snapshot = {
 let dirty = false;
 let lastWrite = 0;
 let lastZone: string | null | undefined;
+
+/** Évènement venu d'un autre module (ex. détection du son perdu), ajouté à la chronologie. */
+export function diagEvent(e: string, d?: Ev["d"]): void {
+  push(e, d);
+}
 
 function push(e: string, d?: Ev["d"]): void {
   const now = Date.now();
@@ -79,8 +86,10 @@ function setParticipants(n: number): void {
   const before = snap.participants;
   snap.participants = n;
   snap.peakParticipants = Math.max(snap.peakParticipants, n);
-  const crossedUp = before < SERVER_THRESHOLD && n >= SERVER_THRESHOLD;
-  const crossedDown = before >= SERVER_THRESHOLD && n < SERVER_THRESHOLD;
+  // Juste après l'entrée, WorkAdventure annonce les personnes déjà présentes une par une : pas une bascule.
+  const settled = snap.since !== null && Date.now() - snap.since >= SETTLE_MS;
+  const crossedUp = settled && before < SERVER_THRESHOLD && n >= SERVER_THRESHOLD;
+  const crossedDown = settled && before >= SERVER_THRESHOLD && n < SERVER_THRESHOLD;
   if (crossedUp || crossedDown) snap.crossedFive++;
   push("participants", { n, from: before, ...(crossedUp ? { mode: "serveur" } : crossedDown ? { mode: "direct" } : {}) });
 }
