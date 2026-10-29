@@ -13,10 +13,9 @@
    - vue de l'extérieur, une salle qui accueille une session (en cours ou dans moins d'une heure) est
      soulignée d'un liseré vert (vous pouvez entrer) ou rouge côté porte, avec un panneau posé dessus :
      titre, horaire, bouton S'inscrire (page /panneau-salle du site). À l'intérieur, la salle normale ;
-   - pendant une session, on n'entre que par téléportation (lien de la session, bouton Rejoindre de
-     l'agenda ou du panneau) : une personne qui entre à pied est remise devant la porte. Le lien ne
-     téléporte que si la porte est ouverte et la personne admise ; sinon il explique pourquoi (trop tôt :
-     « recliquez dans X min », pas inscrit…), sans déplacer personne.
+   - le lien de la session téléporte au centre de la salle si la porte est ouverte et la personne
+     admise ; sinon il explique pourquoi (trop tôt : « recliquez dans X min », pas inscrit…), sans
+     déplacer personne. Une personne admise peut aussi entrer à pied.
    Mise en service, salles et messages se règlent sur le site (src/lib/sessions/config.ts), sans
    redéployer la carte. Plan inactif ou site injoignable : personne n'est bloqué.
    ========================================================= */
@@ -31,10 +30,6 @@ const ANNOUNCE_MS = 60 * 60_000;
 const EDGE = 6;
 const GREEN = "98ff81";
 const RED = "ff5353";
-/** Entrée voulue (lien, agenda, panneau) : variable privée du joueur posée juste avant la téléportation. */
-const ENTRY_KEY = "sessionsEntry";
-/** Une entrée signalée reste valable ce temps-là (le temps de la téléportation). */
-const ENTRY_VALID_MS = 15_000;
 const POLL_MS = 500;
 /** Relecture si le site ne répond pas. */
 const RETRY_MS = 3 * 60_000;
@@ -49,8 +44,6 @@ interface GuardWindow {
   message: string;
   /** Inscrit arrivé trop tôt ; {delai} est remplacé ici par le temps restant. */
   early: string;
-  /** Entrée à pied pendant la session. */
-  walkIn: string;
   link?: { label: string; url: string };
   endNotice?: { at: number; text: string };
 }
@@ -80,8 +73,6 @@ const noticesShown = new Set<string>();
 /** Résolue après la première lecture du plan (réussie ou non) : l'arrivée par lien l'attend. */
 let markLoaded: () => void = () => undefined;
 const firstLoad = new Promise<void>((resolve) => (markLoaded = resolve));
-/** Entrée voulue signalée par ce script (arrivée par lien). */
-let localEntry: { room: string; at: number } | null = null;
 
 async function load(): Promise<number> {
   try {
@@ -232,24 +223,11 @@ function formatDelay(ms: number): string {
   return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}`;
 }
 
-function enteredOnPurpose(roomId: string): boolean {
-  const recent = (e: { room?: string; at?: number } | null) =>
-    !!e && e.room === roomId && typeof e.at === "number" && Date.now() - e.at < ENTRY_VALID_MS;
-  if (recent(localEntry)) return true;
-  try {
-    const raw = WA.player.state[ENTRY_KEY];
-    return typeof raw === "string" && recent(JSON.parse(raw) as { room?: string; at?: number });
-  } catch {
-    return false;
-  }
-}
-
 export type ArrivalVerdict = { ok: true } | { ok: false; text: string; link?: { label: string; url: string } };
 
 /**
  * Arrivée par lien vers (x, y) : faut-il téléporter ? Dans une salle de session, seulement si la porte
  * est ouverte et la personne admise. Sinon, l'explication à afficher (et personne ne bouge).
- * En cas d'acceptation, l'entrée est notée comme voulue.
  */
 export async function checkSessionArrival(x: number, y: number): Promise<ArrivalVerdict> {
   await Promise.race([firstLoad, new Promise((r) => setTimeout(r, 4000))]);
@@ -261,7 +239,6 @@ export async function checkSessionArrival(x: number, y: number): Promise<Arrival
   const w = current ?? next;
   if (w && !w.allowed) return { ok: false, text: w.message, link: w.link };
   if (!current && next) return { ok: false, text: next.early.replace("{delai}", formatDelay(next.from - now)) };
-  localEntry = { room: room.id, at: Date.now() };
   return { ok: true };
 }
 
@@ -288,8 +265,6 @@ export function initSessions(): void {
   }
 
   let busy = false;
-  /** Salle où l'on était au tour précédent (undefined : premier tour, pas d'« entrée »). */
-  let lastRoom: string | null | undefined;
   const tick = async () => {
     if (busy || (!plan?.active && overlays.size === 0)) return;
     busy = true;
@@ -298,22 +273,12 @@ export function initSessions(): void {
       const now = Date.now() + skew;
       syncOverlays(p.x, p.y, now);
       const room = roomAt(p.x, p.y);
-      const entering = lastRoom !== undefined && room !== null && lastRoom !== room.id;
-      lastRoom = room?.id ?? null;
       if (!room) return;
       const w = room.windows.find((x) => now >= x.from && now < x.to);
       if (!w) return; // salle libre
       if (!w.allowed) {
         await WA.player.teleport(room.front.x, room.front.y);
-        lastRoom = null;
         banner("session-refus", w.message, "#b3261e", w.link);
-        return;
-      }
-      // Admis, mais entré à pied : pendant une session, on n'entre que par téléportation.
-      if (entering && !enteredOnPurpose(room.id)) {
-        await WA.player.teleport(room.front.x, room.front.y);
-        lastRoom = null;
-        banner("session-a-pied", w.walkIn, "#6e1fff");
         return;
       }
       if (w.endNotice && now >= w.endNotice.at && !noticesShown.has(w.sessionId)) {
