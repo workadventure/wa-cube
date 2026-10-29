@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Liseré de salle</title>
+<!--
+  Liseré autour d'une salle qui accueille une session (src/sessions.ts) : une bande de couleur unie.
+  Couleur dans le fragment d'adresse, sans dièse :  lisere.html#c=98ff81
+-->
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #6e1fff; }
+</style>
+</head>
+<body>
+<script>
+  function paint() {
+    var m = /c=([0-9a-fA-F]{6})/.exec(location.hash);
+    document.body.style.background = document.documentElement.style.background = m ? "#" + m[1] : "#6e1fff";
+  }
+  paint();
+  window.addEventListener("hashchange", paint);
+</script>
+</body>
+</html>
