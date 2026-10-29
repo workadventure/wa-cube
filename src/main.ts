@@ -12,6 +12,7 @@ import { initDiagnostics } from "./diagnostics";
 import { initRoofs } from "./roofs";
 import { initAccessRules } from "./accessRules";
 import { initRestrictedAreas } from "./restricted";
+import { initSessions } from "./sessions";
 import { initAudioWatch } from "./audioWatch";
 import { initSoundCheck } from "./soundCheck";
 import { initNews } from "./news";
@@ -75,6 +76,12 @@ WA.onInit().then(() => {
     // Droits des lieux : règles modifiables depuis l'onglet Admin du site, et contrôle des lieux restreints.
     initAccessRules();
     initRestrictedAreas();
+    // Sessions de l'agenda : une salle est réservée aux inscrits de la session en cours (réglages sur le site).
+    try {
+        initSessions();
+    } catch (e) {
+        console.warn("[sessions]", e);
+    }
     try {
         initBubbleModeration();
     } catch (e) {
