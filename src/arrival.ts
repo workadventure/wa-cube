@@ -1,6 +1,7 @@
 /// <reference types="@workadventure/iframe-api-typings" />
 
 import { accessAt, accessDenied, canEnterAt, zoneAt } from "./zones";
+import { checkSessionArrival, explainSessionRefusal } from "./sessions";
 
 /* =========================================================
    Arrivée directe par lien d'invitation
@@ -81,9 +82,17 @@ export function initArrival(): void {
         setTimeout(() => explainRefusal(x, y), 1500);
         return;
       }
+      // Salle de session : téléportation seulement si la porte est ouverte et la personne admise,
+      // sinon explication (trop tôt, pas inscrit…) et la personne reste au point d'arrivée.
       // Petit délai : le point d'arrivée de la carte est appliqué juste avant.
       setTimeout(() => {
-        WA.player.teleport(Math.round(x), Math.round(y)).catch((e) => console.warn("[arrivée] téléportation impossible", e));
+        void checkSessionArrival(x, y).then((verdict) => {
+          if (!verdict.ok) {
+            explainSessionRefusal(verdict);
+            return;
+          }
+          WA.player.teleport(Math.round(x), Math.round(y)).catch((e) => console.warn("[arrivée] téléportation impossible", e));
+        });
       }, 400);
       return;
     }
