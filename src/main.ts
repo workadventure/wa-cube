@@ -26,7 +26,8 @@ const PLAN_URL = "https://campus-entry-cube.lovable.app/plan-aide";
 WA.onInit().then(() => {
     console.info('Scripting API ready');
     console.info('Player tags: ',WA.player.tags)
-    const userTags = WA.player.tags;    
+    // Tags comparés sans majuscules : « Premium » saisi dans l'admin WorkAdventure vaut « premium ».
+    const userTags = (WA.player.tags ?? []).map((t) => t.trim().toLowerCase());
     // Couleur du nom selon la formation : réglable depuis l'onglet Admin
     // de la page Plan & FAQ (variable de salle "tagColors").
     // Posée en premier : une erreur plus bas dans ce script ne doit pas

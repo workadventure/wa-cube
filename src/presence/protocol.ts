@@ -293,8 +293,10 @@ export function ackText(a: Pick<AdminAck, "kind" | "action" | "fromName">): stri
 }
 
 export function roleFromTags(tags: readonly string[], isLogged: boolean): PresenceRole {
-  if (tags.includes("admin")) return "admin";
-  if (tags.includes("staff")) return "staff";
-  if (tags.includes("premium")) return "premium";
+  // Sans majuscules : « Premium » ou « Staff » saisis dans l'admin WorkAdventure comptent aussi.
+  const mine = tags.map((t) => t.trim().toLowerCase());
+  if (mine.includes("admin")) return "admin";
+  if (mine.includes("staff")) return "staff";
+  if (mine.includes("premium")) return "premium";
   return isLogged ? "membre" : "visiteur";
 }
