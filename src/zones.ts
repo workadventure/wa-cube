@@ -63,7 +63,7 @@ export interface AccessZone {
   rule: AccessRule;
   /** Règle non modifiable depuis l'administration. */
   locked?: boolean;
-  /** Le script ramène à l'entrée toute personne sans droit trouvée dans ce lieu (même par défaut). */
+  /** Le script ramène devant la porte (ou à l'entrée, si elle arrive par un lien) toute personne sans droit trouvée dans ce lieu (même par défaut). */
   enforce?: boolean;
 }
 
