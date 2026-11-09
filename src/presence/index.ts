@@ -25,7 +25,6 @@
 import { currentTagColors } from "../tagColors";
 import { colorForTags } from "../tagColors/config";
 import { canEnterAt, zoneAt } from "../zones";
-import { playerTags, verifiedEmail } from "../extraTags";
 import {
   ADMIN_COMMAND_MAX_AGE_MS,
   ADMIN_COMMAND_VARIABLE,
@@ -144,8 +143,7 @@ function sendAck(to: string | undefined, id: string, kind: AckKind, action: AckA
 }
 async function myInfo(): Promise<PresenceInfo> {
   const pos = await WA.player.getPosition();
-  // Tags de WorkAdventure + tags ajoutés sur le site (onglet Admin).
-  const tags = playerTags();
+  const tags = WA.player.tags ?? [];
   const isLogged = WA.player.isLogged === true;
   const f = colorForTags(currentTagColors(), tags);
   return {
@@ -162,7 +160,6 @@ async function myInfo(): Promise<PresenceInfo> {
     sessionId,
     idleMs: Math.max(0, Date.now() - lastMoveAt),
     tags: [...tags],
-    email: verifiedEmail() || undefined,
   };
 }
 
@@ -402,7 +399,7 @@ export function initPresence(): void {
       // L'admin amène la personne à lui. Jamais plus loin que ses droits ne le permettent à pied.
       const x = cmd.x ?? 0;
       const y = (cmd.y ?? 0) + 32;
-      if (!canEnterAt(playerTags(), x, y)) {
+      if (!canEnterAt(WA.player.tags ?? [], x, y)) {
         // L'admin le sait : « X n'a pas accès à cet endroit ».
         sendAck(cmd.byUuid, cmd.id, "summon", "denied");
         return;
@@ -458,7 +455,7 @@ export function initPresence(): void {
         type: "message",
         callback: () => {
           // Jamais plus loin que ce que les droits de la personne permettent à pied.
-          if (!canEnterAt(playerTags(), s.x, s.y + 32)) {
+          if (!canEnterAt(WA.player.tags ?? [], s.x, s.y + 32)) {
             sendAck(s.fromUuid, id, "summon", "denied");
             return;
           }

@@ -1,7 +1,6 @@
 /// <reference types="@workadventure/iframe-api-typings" />
 
 import { accessAt, accessDenied, isEnforced, tagsAllow } from "./zones";
-import { playerTags } from "./extraTags";
 
 /* =========================================================
    Lieux à accès restreint : ramener devant la porte ceux qui n'y ont pas droit
@@ -31,7 +30,7 @@ export function initRestrictedAreas(): void {
     if (busy) return;
     busy = true;
     try {
-      const tags = playerTags();
+      const tags = WA.player.tags ?? [];
       const p = await WA.player.getPosition();
       const zone = accessAt(p.x, p.y);
       if (!isEnforced(zone) || tagsAllow(zone, tags)) {

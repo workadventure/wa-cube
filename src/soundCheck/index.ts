@@ -21,7 +21,6 @@
    ========================================================= */
 
 import { diagEvent } from "../diagnostics";
-import { playerTags } from "../extraTags";
 
 /**
  * Personnes qui font tourner le prototype (témoins compris). Tags lus à la connexion.
@@ -238,7 +237,7 @@ function isAnswer(x: unknown): x is Answer {
 
 /** À appeler une fois, après WA.onInit(). `openHelp` ouvre la page Plan & FAQ. */
 export function initSoundCheck(openHelp: () => void): void {
-  if (!PROTOTYPE_TAGS.some((t) => playerTags().includes(t))) return;
+  if (!PROTOTYPE_TAGS.some((t) => WA.player.tags.includes(t))) return;
   try {
     deafTest = WA.room.hashParameters["test-son"] === "sourd";
   } catch {

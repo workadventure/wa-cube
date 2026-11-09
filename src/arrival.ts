@@ -1,7 +1,6 @@
 /// <reference types="@workadventure/iframe-api-typings" />
 
 import { accessAt, accessDenied, canEnterAt, zoneAt } from "./zones";
-import { playerTags } from "./extraTags";
 import { checkSessionArrival, explainSessionRefusal } from "./sessions";
 
 /* =========================================================
@@ -70,7 +69,7 @@ export function initArrival(): void {
   try {
     const params = WA.room.hashParameters ?? {};
     if (Object.keys(params).length === 0) return; // arrivée normale : rien à contrôler
-    const tags = playerTags();
+    const tags = WA.player.tags ?? [];
     const placeKey = Object.keys(params).find((k) => k in PLACES);
     const raw = params[GOTO_PARAM] ?? (placeKey ? `${PLACES[placeKey].x},${PLACES[placeKey].y}` : undefined);
     if (raw) {

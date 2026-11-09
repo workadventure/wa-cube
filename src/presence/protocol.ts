@@ -70,10 +70,8 @@ export interface PresenceInfo {
   sessionId?: string;
   /** Temps écoulé sans déplacement dans cet onglet (ms). */
   idleMs?: number;
-  /** Tags tels que le navigateur de cette personne les connaît (jeton de connexion + tags ajoutés sur le site), pour repérer un décalage avec son compte. */
+  /** Tags tels que le navigateur de cette personne les connaît (jeton de connexion), pour repérer un décalage avec son compte. */
   tags?: string[];
-  /** E-mail du compte, vérifié par le site : sert à ajouter un tag depuis l'onglet Admin. Absent pour un visiteur. */
-  email?: string;
 }
 
 export type KickReason = "inactive" | "entrance" | "duplicate" | "other";
