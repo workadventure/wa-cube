@@ -83,8 +83,8 @@ export const ACCESS_ZONES: AccessZone[] = [
     id: "salle-ai-automation",
     label: "Salle AI Automation Builder",
     rects: [[3744, 2368, 416, 400]],
-    rule: { mode: "tags", tags: ["aab"], message: "Vous devez être en formation AI Automation Builder pour entrer." },
-    enforce: true,
+    // Ouverte comme les autres salles (premium) : plus de tag « aab » exigé ni de surveillance par le script (10/11/2026).
+    rule: PREMIUM,
   },
   // Staff : un peu plus bas que le cadre de la zone, pour inclure son point de téléportation (592, 2000).
   { id: "staff", label: "Zone équipe (staff)", rects: [[346, 1240, 462, 820]], rule: { mode: "tags", tags: ["staff"], message: "" } },
