@@ -21,12 +21,12 @@ const GOTO_PARAM = "goto";
  * vrai point d'entrée dans la carte et ne sont pas ici.
  */
 const PLACES: Record<string, { x: number; y: number }> = {
-  "salle-1": { x: 1600, y: 960 },
-  "salle-2": { x: 2272, y: 960 },
-  "salle-3": { x: 2944, y: 960 },
-  "salle-4": { x: 3616, y: 960 },
-  "salle-5": { x: 4288, y: 960 },
-  "salle-6": { x: 4960, y: 960 },
+  "salle-1": { x: 1952, y: 960 },
+  "salle-2": { x: 2624, y: 960 },
+  "salle-3": { x: 3296, y: 960 },
+  "salle-4": { x: 3968, y: 960 },
+  "salle-5": { x: 4640, y: 960 },
+  "salle-6": { x: 5312, y: 960 },
   "salle-7": { x: 5232, y: 1456 },
   "salle-ai-automation": { x: 3904, y: 2560 },
   agora: { x: 2944, y: 2144 },
