@@ -16,6 +16,7 @@ import { initSessions } from "./sessions";
 import { initAudioWatch } from "./audioWatch";
 import { initSoundCheck } from "./soundCheck";
 import { initNews } from "./news";
+import { initExtraTags, onPlayerTagsChange, playerTags } from "./extraTags";
 
 console.info('Script started successfully');
 
@@ -23,37 +24,43 @@ console.info('Script started successfully');
 const PLAN_URL = "https://campus-entry-cube.lovable.app/plan-aide";
 
 // Waiting for the API to be ready
-WA.onInit().then(() => {
+WA.onInit().then(async () => {
     console.info('Scripting API ready');
     console.info('Player tags: ',WA.player.tags)
-    // Tags comparés sans majuscules : « Premium » saisi dans l'admin WorkAdventure vaut « premium ».
-    const userTags = (WA.player.tags ?? []).map((t) => t.trim().toLowerCase());
     // Couleur du nom selon la formation : réglable depuis l'onglet Admin
     // de la page Plan & FAQ (variable de salle "tagColors").
     // Posée en premier : une erreur plus bas dans ce script ne doit pas
     // laisser la personne avec un fond gris.
     initTagColors().catch(e => console.error("[couleurs]", e));
+    // Tags ajoutés depuis l'onglet Admin du site, en plus de ceux de WorkAdventure (2,5 s d'attente au plus).
+    await initExtraTags().catch(e => console.warn("[tags ajoutés]", e));
 
     // Liste des tags autorisés à traverser (basée sur votre script)
     // "admin" (admins WorkAdventure) et "staff" (équipe) passent partout.
+    // Tags comparés sans majuscules, ceux ajoutés sur le site compris ; recalculé quand ils changent.
     const authorizedTags = ["premium", "staff", "admin"];
     const authorizedTagsEntrance = ["member", "premium", "staff", "admin"];
-
-    // Vérifier si l'utilisateur possède au moins un des tags
-    const hasAuthorizedTag = authorizedTags.some(tag => userTags.includes(tag));
-    const hasAuthorizedTagEntrance = authorizedTagsEntrance.some(tag => userTags.includes(tag));
-
-    if (hasAuthorizedTag) {
-        // Masquer la couche de collision pour les membres de l'équipe
-        WA.room.hideLayer("rightsRestriction");
-        WA.room.hideLayer("collidesVisitor");
-        WA.room.hideLayer("visitorAssets");
-    }
-    if (hasAuthorizedTagEntrance) {
-        // Masquer la couche de collision pour les membres de l'équipe
-        WA.room.hideLayer("entranceAssets");
-        WA.room.hideLayer("collidesEntrance");
-    }
+    const hiddenLayers = new Set<string>();
+    const applyRightsLayers = () => {
+        const userTags = playerTags();
+        const hasAuthorizedTag = authorizedTags.some(tag => playerTags().includes(tag));
+        const hasAuthorizedTagEntrance = authorizedTagsEntrance.some(tag => userTags.includes(tag));
+        // Calques de collision masqués pour qui a le droit de passer. Remis seulement si c'est nous qui les
+        // avions masqués (tag retiré en cours de partie) : un calque caché dans la carte reste caché.
+        const toggle = (allowed: boolean, layers: string[]) =>
+            layers.forEach(l => {
+                if (allowed && !hiddenLayers.has(l)) {
+                    WA.room.hideLayer(l);
+                    hiddenLayers.add(l);
+                } else if (!allowed && hiddenLayers.delete(l)) {
+                    WA.room.showLayer(l);
+                }
+            });
+        toggle(hasAuthorizedTag, ["rightsRestriction", "collidesVisitor", "visitorAssets"]);
+        toggle(hasAuthorizedTagEntrance, ["entranceAssets", "collidesEntrance"]);
+    };
+    applyRightsLayers();
+    onPlayerTagsChange(applyRightsLayers);
 
     hideEvent();
     hideCircle();
@@ -209,7 +216,7 @@ WA.onInit().then(() => {
             WA.room.showLayer("steps/step5");
         });
 
-        const hasAuthorizedTag = authorizedTags.some(tag => userTags.includes(tag));
+        const hasAuthorizedTag = authorizedTags.some(tag => playerTags().includes(tag));
 
         if (!hasAuthorizedTag) { 
             WA.room.onEnterLayer("rightsRestriction").subscribe(() => {

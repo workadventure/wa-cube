@@ -15,6 +15,7 @@
    jusqu'à son prochain rechargement.
    ========================================================= */
 
+import { onPlayerTagsChange, playerTags } from "../extraTags";
 import {
   DEFAULT_TAG_COLORS,
   TAG_COLORS_VARIABLE,
@@ -43,7 +44,7 @@ export function currentTagColors(): TagColor[] {
 }
 
 async function applyMyColor(entries: TagColor[], force = false): Promise<void> {
-  const match = colorForTags(entries, WA.player.tags ?? []);
+  const match = colorForTags(entries, playerTags());
   const color = match ? match.color : null;
   if (!force && color === appliedColor) return;
   // Rien à poser et rien posé : inutile de solliciter le serveur.
@@ -77,6 +78,9 @@ export async function initTagColors(): Promise<void> {
   const reassert = () => applyMyColor(entriesInUse, true).catch((e) => console.warn(e));
   EARLY_REASSERT_MS.forEach((ms) => setTimeout(reassert, ms));
   setInterval(reassert, REASSERT_EVERY_MS);
+
+  // Tag ajouté ou retiré depuis l'onglet Admin du site : la couleur suit.
+  onPlayerTagsChange(() => void applyMyColor(entriesInUse).catch((e) => console.warn(e)));
 
   try {
     WA.state.onVariableChange(TAG_COLORS_VARIABLE).subscribe((next) => {

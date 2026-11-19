@@ -1,5 +1,7 @@
 /// <reference types="@workadventure/iframe-api-typings" />
 
+import { playerTags } from "./extraTags";
+
 /* =========================================================
    Sessions de l'agenda : une salle appartient à la session en cours
    ---------------------------------------------------------
@@ -80,7 +82,7 @@ async function load(): Promise<number> {
       method: "POST",
       // text/plain : requête « simple », sans préparation CORS. Le site lit le JSON dans le corps.
       headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify({ token: WA.player.userRoomToken ?? null, tags: WA.player.tags ?? [], testRegs: testRegs() }),
+      body: JSON.stringify({ token: WA.player.userRoomToken ?? null, tags: playerTags(), testRegs: testRegs() }),
       cache: "no-store",
     });
     if (!res.ok) {
