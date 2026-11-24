@@ -5,7 +5,6 @@ import { closeDialog } from "@workadventure/npc-dialog-box";
 import { startShowroomTutorial } from "./showroomTutorial";
 import { initTagColors } from "./tagColors";
 import { initPresence } from "./presence";
-import { initBubbleModeration } from "./moderation/bubble";
 import { initArrival } from "./arrival";
 import { initCowork } from "./cowork";
 import { initDiagnostics } from "./diagnostics";
@@ -89,11 +88,6 @@ WA.onInit().then(async () => {
         initSessions();
     } catch (e) {
         console.warn("[sessions]", e);
-    }
-    try {
-        initBubbleModeration();
-    } catch (e) {
-        console.warn("[modération] bulle", e);
     }
     initArrival();
     // Cloche « Nouveautés » à côté du chat : messages et vidéos publiés par l'équipe, avec pastille tant qu'ils ne sont pas lus.
